@@ -1,5 +1,5 @@
 # activegenerator/laravel
-Kickstart your Laravel project from a single yml schema file
+Build your Laravel project from a single yml schema file
 
 ## Installation
 In your laravel directory run:
