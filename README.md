@@ -90,16 +90,6 @@ config: # Config on root
 Product:
   config: # Config on model
     ...
-  code: # Add custom code to some files. Example:
-    model:
-      imports: |
-        use Laravel\Nova\Fields\Currency;
-        use Laravel\Nova\Fields\Markdown;
-      header:
-      body: |
-        public function someFunction() {
-            return "Test 123";
-        }
   fields:
     name:
       type: string:200 # Mandatory  - Results in migration: $table->string('name', 200);
@@ -126,6 +116,16 @@ Product:
       foreignPivotKey: 'product_id'
       relatedPivotKey: 'file_id'
       prop: files
+  code: # Add custom code to some files. Example:
+    model:
+      imports: |
+        use Laravel\Nova\Fields\Currency;
+        use Laravel\Nova\Fields\Markdown;
+      header:
+      body: |
+        public function someFunction() {
+            return "Test 123";
+        }
 
 Category:
   fields:
