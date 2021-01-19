@@ -139,3 +139,13 @@ php artisan activegenerator:publish templates
 ```
 
 The templates will be available in the generator/templates directory
+
+
+## Generate!
+
+```
+php artisan activegenerator:build example.yml
+```
+
+Use ```--force``` to overwrite existing files
+Use ```--include=List,OfModels``` to only output some models
