@@ -1,0 +1,56 @@
+config:
+  softDeletes: false # softDeletes will auto create deleted_at and turn on softDeletes in the model
+  autoIds: true # Will auto create ids
+  autoTimestamps: true # Will auto create timestamps like 'created_at' and 'updated_at'
+  autoRelations: true # Will auto create relations based on 'foreignId', or creating the opposite relation. Also auto creates missing pivot tables
+  autoNullable: true # Will auto set all fields to nullable except for 'id', overridable on field level
+  autoFillable: true # Will auto set all fields als fillable except for 'id', overridable on field level
+  include:  # Set this to only use specific Generators
+    # - MigrationGenerator
+  exclude:  # Set this use all generators except the specified
+    # - ModelGenerator
+
+Product:
+  config:
+    ...
+  code: # Add custom code to some files. Example:
+    model:
+      imports: |
+        use Laravel\Nova\Fields\Currency;
+        use Laravel\Nova\Fields\Markdown;
+      header:
+      body: |
+        public function someFunction() {
+            return "Test 123";
+        }
+  fields:
+    name:
+      type: string:200 # Mandatory  - Results in migration: $table->string('name', 200);
+      title: Name
+      rules: required|bla|bla
+      casts: string
+      fillable: true
+      appends: false
+      hidden: false
+      nullable: true
+    category_id:
+      type: foreignId # Mandatory  - Results in migration: $table->foreignId('category_id')->references('id')->on('categories');
+      references: id
+      on: categories
+  relations:
+    - type: belongsTo # Mandatory  - Other types: hasMany hasOne
+      model: File # Mandatory
+      table: files
+      prop: files
+      foreignKey: download_id
+    - type: belongsToMany # Mandatory
+      model: File # Mandatory
+      table: 'file_products'
+      foreignPivotKey: 'product_id'
+      relatedPivotKey: 'file_id'
+      prop: files
+
+Category:
+  fields:
+    name:
+      type: string # Mandatory
