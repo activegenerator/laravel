@@ -19,9 +19,9 @@ class YamlModel extends YamlBaseClass
     {
         parent::__construct();
         $this->parent = &$parent;
-        $this->name = $yamlModelName;
         $this->data = $yamlData;
 
+        $this->setName($yamlModelName);
         $this->setTable();
 
         $this->fields = new YamlCollection();
@@ -56,6 +56,18 @@ class YamlModel extends YamlBaseClass
     private function setTable()
     {
         $this->table = $this->get('config.tableName', $this->getName('table'));
+    }
+
+    private function setName($name) {
+        $this->nameOriginal = $name;
+
+        if (Str::contains($name, '\\')) {
+            $this->name = Str::afterLast($name, '\\');
+            $this->nameFull = $name;
+        } else {
+            $this->name = $name;
+            $this->nameFull = 'App\Models\\' . $name;
+        }
     }
 
     public function getName($to = "")
