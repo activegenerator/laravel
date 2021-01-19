@@ -1,6 +1,6 @@
 {
   "name": "activegenerator/laravel",
-  "description": "Build your Laravel project from a yml file",
+  "description": "Kickstart your Laravel project from a single yml file",
   "type": "library",
   "license": "MIT",
   "authors": [

@@ -1,4 +1,5 @@
 # activegenerator/laravel
+Kickstart your Laravel project from a single yml schema file
 
 ## Installation
 In your laravel directory run:
@@ -27,7 +28,7 @@ The config file is now accessabile in ```config/activegenerator.php```. Besides 
 ...
 ```
 
-## Writing a schema file (.yml)
+## Writing the yml
 
 Go ahead and publish the ```example.yml``` file to the ```generator/schemas``` directory:
 ```
@@ -44,7 +45,6 @@ Product:
       type: string:255
     price:
       type: decimal:10,2
-      rules: required
     discount_price:
       type: decimal:10,2
     download_id: # Auto creates relationships on both models
@@ -57,7 +57,6 @@ File:
     path:
       type: string
       title: Path
-      rules: required
 ```
 
 ## Config object & defaults
