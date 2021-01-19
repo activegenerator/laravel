@@ -84,8 +84,11 @@ The config object can be set on the root (affecting all models in the file) or o
 All properties are optional except for props with ```# Mandatory```. The other props will be inferred by naming-convention unless explicitly specified.
 
 ```yml
+config: # Config on root
+  ...
+
 Product:
-  config:
+  config: # Config on model
     ...
   code: # Add custom code to some files. Example:
     model:
