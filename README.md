@@ -82,7 +82,7 @@ The config object can be set on the root (effecting all models in the file) or o
 
 ## All options on the yaml file
 
-All fields are optional except for fields with ```# Mandatory```. The other fields will be inferred by naming-convention unless explicitly specified.
+All properties are optional except for props with ```# Mandatory```. The other props will be inferred by naming-convention unless explicitly specified.
 
 ```yml
 Product:
@@ -100,7 +100,7 @@ Product:
         }
   fields:
     name:
-      type: string:200 # Mandatory      Results in migration: $table->string('name', 200);
+      type: string:200 # Mandatory  - Results in migration: $table->string('name', 200);
       title: Name
       rules: required|bla|bla
       casts: string
@@ -109,16 +109,16 @@ Product:
       hidden: false
       nullable: true
     category_id:
-      type: foreignId # Mandatory      results in migration: $table->foreignId('category_id')->references('id')->on('categories');
+      type: foreignId # Mandatory  - Results in migration: $table->foreignId('category_id')->references('id')->on('categories');
       references: id
       on: categories
   relations:
-    - type: belongsTo # Mandatory      or hasMany hasOne
+    - type: belongsTo # Mandatory  - Other types: hasMany hasOne
       model: File # Mandatory     
       table: files
       prop: files
       foreignKey: download_id
-    - type: belongsToMany # Mandatory      or hasMany hasOne
+    - type: belongsToMany # Mandatory
       model: File # Mandatory     
       table: 'file_products'
       foreignPivotKey: 'product_id'
@@ -128,6 +128,15 @@ Product:
 Category:
   fields:
     name:
-      type: string # Mandatory!
+      type: string # Mandatory
 
 ```
+
+
+## Changing the templates
+
+```
+php artisan ag:publish templates
+```
+
+The templates will be available in the generator/templates directory
