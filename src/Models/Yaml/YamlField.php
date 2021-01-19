@@ -19,6 +19,7 @@ class YamlField extends YamlBaseClass {
 
     public $nullable = true;
     public $default = null;
+    public $rules = "";
 
     public YamlModel $parent;
     public $title;
@@ -41,6 +42,8 @@ class YamlField extends YamlBaseClass {
         $this->setAppends();
         $this->setHidden();
         $this->setTitle();
+
+        $this->setRules();
 
         $this->setMigration();
     }
@@ -78,6 +81,10 @@ class YamlField extends YamlBaseClass {
 
     private function setTitle() {
         $this->title = $this->get('title', Str::to($this->slug, 'studly'));
+    }
+
+    private function setRules() {
+        $this->title = $this->get('rules', '');
     }
 
     private function setMigration() {
