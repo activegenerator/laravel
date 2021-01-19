@@ -5,7 +5,7 @@ Build your Laravel project from a single yml schema file
 In your laravel directory run:
 
 ```
-composer require activegenerator/laravel
+composer require activegenerator/laravel --dev
 ```
 
 ## Configuration
