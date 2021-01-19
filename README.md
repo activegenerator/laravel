@@ -77,7 +77,7 @@ config:
     # - ModelGenerator
 ```
 
-The config object can be set on the root (effecting all models in the file) or on a individual model
+The config object can be set on the root (affecting all models in the file) or on a individual model
 
 ## All options on the yaml file
 
