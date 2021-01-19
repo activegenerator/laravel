@@ -1,4 +1,4 @@
-# activegenerator/laravel
+# ActiveGenerator/laravel
 Build your Laravel project from a single yml schema file
 
 ## Installation
