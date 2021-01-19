@@ -20,6 +20,7 @@ class YamlField extends YamlBaseClass {
     public $nullable = true;
     public $default = null;
     public $rules = "";
+    public $editable = true;
 
     public YamlModel $parent;
     public $title;
@@ -41,6 +42,7 @@ class YamlField extends YamlBaseClass {
         $this->setCasts();
         $this->setAppends();
         $this->setHidden();
+        $this->setEditable();
         $this->setTitle();
 
         $this->setRules();
@@ -77,6 +79,10 @@ class YamlField extends YamlBaseClass {
 
     private function setHidden() {
         $this->hidden = $this->get('hidden', false);
+    }
+
+    private function setEditable() {
+        $this->editable = $this->get('editable', $this->type->defaultEditable());
     }
 
     private function setTitle() {

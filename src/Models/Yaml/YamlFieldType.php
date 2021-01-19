@@ -52,6 +52,14 @@ class YamlFieldType extends BaseClass {
         ][$this->database] ?? true;
     }
 
+    public function defaultEditable() {
+        return [
+            'id' => false,
+            'updated_at' => false,
+            'created_at' => false
+        ][$this->database] ?? true;
+    }
+
     public function defaultRelation() {
         if ($this->database == "foreignId") {
             $slug = $this->parent->slug;
