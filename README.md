@@ -32,7 +32,7 @@ The config file is now accessabile in ```config/activegenerator.php```. Besides 
 
 Go ahead and publish the ```example.yml``` file to the ```generator/schemas``` directory:
 ```
-php artisan ag:publish schemas
+php artisan activegenerator:publish schemas
 ```
 Below a minimal example yml file:
 
@@ -135,7 +135,7 @@ Category:
 ## Changing the templates
 
 ```
-php artisan ag:publish templates
+php artisan activegenerator:publish templates
 ```
 
 The templates will be available in the generator/templates directory
