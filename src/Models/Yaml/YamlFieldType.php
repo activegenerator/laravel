@@ -87,7 +87,7 @@ class YamlFieldType extends BaseClass {
             $addition .= "->on('" . $this->parent->get('on') . "')";
         }
 
-        var_dump($base . $addition . ";");
+        // var_dump($base . $addition . ";");
 
         return $base . $addition . ";";
     }

@@ -105,7 +105,7 @@ abstract class Generator extends BaseClass {
 
         if ($contents === null) continue;
 
-        $outputMinusBase = Str::replaceFirst(base_path(), "", $outputPath);
+        $outputMinusBase = Str::replaceFirst(base_path() . "/", "", $outputPath);
 
         $this->command->line($this->class . " => \033[32m" . $outputMinusBase . "\033[39m");
 
