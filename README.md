@@ -1,5 +1,5 @@
-# activegenerator/laravel
-Build your Laravel project from a single yml schema file
+# ActiveGenerator
+The code generator for Laravel. Build your Laravel project from a single yml schema file
 
 ## Installation
 In your laravel directory run:
@@ -77,26 +77,19 @@ config:
     # - ModelGenerator
 ```
 
-The config object can be set on the root (effecting all models in the file) or on a individual model
+The config object can be set on the root (affecting all models in the file) or on a individual model
 
 ## All options on the yaml file
 
 All properties are optional except for props with ```# Mandatory```. The other props will be inferred by naming-convention unless explicitly specified.
 
 ```yml
+config: # Config on root
+  ...
+
 Product:
-  config:
+  config: # Config on model
     ...
-  code: # Add custom code to some files. Example:
-    model:
-      imports: |
-        use Laravel\Nova\Fields\Currency;
-        use Laravel\Nova\Fields\Markdown;
-      header:
-      body: |
-        public function someFunction() {
-            return "Test 123";
-        }
   fields:
     name:
       type: string:200 # Mandatory  - Results in migration: $table->string('name', 200);
@@ -123,6 +116,16 @@ Product:
       foreignPivotKey: 'product_id'
       relatedPivotKey: 'file_id'
       prop: files
+  code: # Add custom code to some files. Example:
+    model:
+      imports: |
+        use Laravel\Nova\Fields\Currency;
+        use Laravel\Nova\Fields\Markdown;
+      header:
+      body: |
+        public function someFunction() {
+            return "Test 123";
+        }
 
 Category:
   fields:
@@ -139,3 +142,13 @@ php artisan activegenerator:publish templates
 ```
 
 The templates will be available in the generator/templates directory
+
+
+## Generate!
+
+```
+php artisan activegenerator:build example.yml
+```
+
+Use ```--force``` to overwrite existing files
+Use ```--include=List,OfModels``` to only output some models
