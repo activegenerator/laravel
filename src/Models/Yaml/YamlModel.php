@@ -92,6 +92,6 @@ class YamlModel extends YamlBaseClass
             return Arr::get($this->data, $query, $this->parent->get($query, $default));
         }
 
-        return Arr::get($this->data, $query, $default);
+        return parent::get($query, $default);
     }
 }
