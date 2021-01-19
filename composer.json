@@ -1,0 +1,42 @@
+{
+  "name": "activegenerator/laravel",
+  "description": "Build your Laravel project from a yml file",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Lennard",
+      "email": "packagist@spring.nl"
+    }
+  ],
+  "require": {
+    "php": "^7.4|^8.0",
+    "myclabs/deep-copy": "^1.10",
+    "symfony/yaml": "^5.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "ActiveGenerator\\Laravel\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "ActiveGenerator\\Laravel\\Tests\\": "tests"
+    }
+  },
+  "require-dev": {
+    "orchestra/testbench": "^6.0",
+    "phpunit/phpunit": "^9.4"
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "ActiveGenerator\\Laravel\\GeneratorServiceProvider"
+      ]
+    }
+  },
+  "scripts": {
+    "test": "vendor/bin/phpunit --testdox",
+    "test-f": "vendor/bin/phpunit --filter"
+  }
+}

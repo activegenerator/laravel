@@ -1,0 +1,82 @@
+# config:
+#   softDeletes: false
+#   autoIds: false
+#   autoTimestamps: false
+#   autoRelations: false
+#   include:
+#     - MigrationGenerator
+#   exclude:
+#     - ModelGenerator
+
+Product:
+  # config:
+    # softDeletes: false
+    # autoIds: false
+    # autoTimestamps: false
+    # autoRelations: false
+    # include:
+    #   - MigrationGenerator
+    # exclude:
+    #   - ModelGenerator
+  # code:
+  #   model:
+  #     imports: |
+  #       use Laravel\Nova\Fields\Currency;
+  #       use Laravel\Nova\Fields\Markdown;
+  #     header:
+  #     body:
+  fields:
+    name:
+      type: string:200
+      title: Name
+      rules: required
+    description:
+      type: string:255
+    price:
+      type: decimal:10,2
+      rules: required
+    discount_price:
+      type: decimal:10,2
+      nullabe: true
+    # download_id:
+    #   type: foreignId
+    #   references: id
+    #   on: files
+    #   nullabe: true
+  relations:
+    belongsToMany:
+      model: File
+      table: 'file_products'
+      # foreignPivotKey: 'product_id'
+      # relatedPivotKey: 'file_id'
+      # prop: files
+      # foreignKey: download_id
+  # nova:
+    # imports: |
+    #   use Laravel\Nova\Fields\Currency;
+    #   use Laravel\Nova\Fields\Markdown;
+
+# FileProducts:
+#   # config:
+#   #   tableName: 'file_product'
+#   fields:
+#     name:
+#       type: string:200
+#       title: 'Name'
+#       rules: required
+
+File:
+  config:
+    softDeletes: true
+  fields:
+    name:
+      type: string:200
+      title: 'Name'
+      rules: required
+  # relations:
+  #   belongsToMany:
+  #     model: Kast
+  # nova:
+    # imports: |
+    #   use Laravel\Nova\Fields\Currency;
+    #   use Laravel\Nova\Fields\Markdown;

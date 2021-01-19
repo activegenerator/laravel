@@ -1,0 +1,171 @@
+<?php
+
+namespace ActiveGenerator\Laravel\Models\Yaml;
+
+use ActiveGenerator\Laravel\Libs\TopSort\ArraySort;
+use Illuminate\Support\Str;
+use Symfony\Component\Yaml\Yaml;
+
+class YamlSchema extends YamlBaseClass {
+
+    public $data;
+    public YamlCollection $models;
+
+    public function __construct($string, $included = [])
+    {
+        parent::__construct();
+        $this->data = Yaml::parse($string);
+        $this->models = new YamlCollection();
+
+        // Support for the --include parameter
+        if (count($included) > 0) {
+            foreach($this->data as $name => $model) {
+                if (!in_array($name, $included)) {
+                    unset($this->data[$name]);
+                }
+            }
+        }
+
+        $this->createModels();
+        $this->createAutomaticRelations();
+        $this->createAutomaticFields();
+        $this->topologicalSort();
+    }
+
+    private function createModels() {
+        if ($this->data) {
+            // Dumb double processing to make relations work @todo enhance
+            $finalModels = new YamlCollection();;
+            foreach($this->data as $name => $model) {
+                if ($name === "config") continue;
+                $this->models = $this->models->add(new YamlModel($model, $name, $this));
+            }
+
+            foreach($this->data as $name => $model) {
+                if ($name === "config") continue;
+                $finalModels = $finalModels->add(new YamlModel($model, $name, $this));
+            }
+            $this->models = $finalModels;
+        }
+    }
+
+    private function createAutomaticRelations() {
+        /**
+         * Automatic relations
+         */
+        foreach($this->models as $model) {
+            if ($model->get('config.autoRelations', true)) {
+
+                /**
+                * @var YamlRelation
+                */
+                foreach($model->relations as $relation) {
+
+                    // var_dump($relation);
+                    // The default relation will only be available when the related model
+                    // is also defined in the yaml file
+                    $default = $relation->defaultRelation();
+
+                    // Auto-create opposite relation when needed
+                    if ($default) {
+                        $model2 = $this->models->first(fn($x) => $x->name == $default->parent->name);
+
+                        if (!$model2->relations->any(fn($x) => $x->model === $default->model)) {
+                            $model2->relations = $model2->relations->add($default);
+                        }
+                    }
+
+                    // Auto-create a pivot table when needed
+                    if (!$relation->get('autocreatedBy') &&
+                        $relation->type === "belongsToMany" &&
+                        !$this->models->any(fn($x) => $x->table === $relation->table)) {
+
+                        $modelName = Str::to($relation->table, 'studly');
+
+                        $data = ['fields' => [], 'config' => [
+                            'tableName' => $relation->table,
+                            'include' => ['MigrationGenerator']
+                        ]];
+
+                        if ($model->get('config.include')) {
+                            $data['config']['include'] = array_merge($data['config']['include'], $model->get('config.include'));
+                        }
+                        if ($model->get('config.exclude')) {
+                            $data['config']['exclude'] = array_merge($data['config']['exclude'], $model->get('config.exclude'));
+                        }
+
+                        $data['fields'][$relation->foreignPivotKey] = [
+                            'type' => 'foreignId',
+                            'references' => 'id',
+                            'on' => Str::to($relation->foreignPivotKey, 'table')
+                        ];
+
+                        $data['fields'][$relation->relatedPivotKey] = [
+                            'type' => 'foreignId',
+                            'references' => 'id',
+                            'on' => Str::to($relation->relatedPivotKey, 'table')
+                        ];
+
+                        $this->models = $this->models->add(new YamlModel($data, $modelName, $this));
+                    }
+                }
+            }
+        }
+
+    }
+
+    private function createAutomaticFields() {
+        /**
+         * Automatic fields
+         */
+        foreach($this->models as $model) {
+            if ($model->get('config.softDeletes', false) &&!$model->fields->first(fn($x) => $x->slug === "deleted_at")) {
+                $model->fields = $model->fields->prepend(new YamlField(['type' => 'timestamp'], 'deleted_at', $model));
+            }
+
+            if ($model->get('config.autoTimestamps', true) &&!$model->fields->first(fn($x) => $x->slug === "updated_at")) {
+                $model->fields = $model->fields->prepend(new YamlField(['type' => 'timestamp'], 'updated_at', $model));
+            }
+
+            if ($model->get('config.autoTimestamps', true) &&!$model->fields->first(fn($x) => $x->slug === "created_at")) {
+                $model->fields = $model->fields->prepend(new YamlField(['type' => 'timestamp', 'nullable' => false], 'created_at', $model));
+            }
+
+            if ($model->get('config.autoIds', true) && !$model->fields->first(fn($x) => $x->slug === "id")) {
+                $model->fields = $model->fields->prepend(new YamlField(['type' => 'id'], 'id', $model));
+            }
+        }
+    }
+
+    private function topologicalSort() {
+        $sorter = new ArraySort();
+        $index = [];
+
+        /**
+         * @var Table
+         */
+        foreach($this->models as $model) {
+            $deps = [];
+
+            // Find dependencies based on the foreignId
+            $foreignIdFields = $model->fields->filter(fn($x) => $x->type->database == 'foreignId');
+
+            foreach($foreignIdFields as $foreignId) {
+
+                if ($foreignId->get('references') && $foreignId->get('on')) {
+                    $deps[] = $foreignId->get('on');
+                }
+            }
+
+            $index[$model->table] = $model;
+            $sorter->add($model->table, $deps);
+        }
+
+        $sorted = $sorter->sort();
+
+        $this->models = new YamlCollection(array_map(function($table) use($index) {
+            return $index[$table];
+        }, $sorted));
+    }
+
+}
