@@ -90,7 +90,7 @@ class YamlField extends YamlBaseClass {
     }
 
     private function setRules() {
-        $this->title = $this->get('rules', '');
+        $this->rules = $this->get('rules', '');
     }
 
     private function setMigration() {
