@@ -1,6 +1,8 @@
 <?php
 
 namespace ActiveGenerator\Laravel\Helpers;
+
+use Generator;
 use Illuminate\Support\Str;
 
 class Marker {
@@ -10,14 +12,38 @@ class Marker {
     $this->mark = $mark;
   }
 
-  public function line() {
-    return "// @gen " . $this->mark . " - do not remove";
+  public function phpComment($str) {
+      return '// ' . $str . '';
   }
-  public function start() {
-    return "// @gen:start " . $this->mark . " - do not remove";
+
+  public function htmlComment($str) {
+    return '<!-- ' . $str . ' -->';
   }
-  public function end() {
-    return "// @gen:end " . $this->mark . " - do not remove";
+
+  public function bladeComment($str) {
+    return '{{-- ' . $str . ' --}}';
+  }
+
+  public function line($type = "php") {
+    $mark = "@gen " . $this->mark . " - do not remove";
+
+    if ($type === "php") return $this->phpComment($mark);
+    if ($type === "html") return $this->htmlComment($mark);
+    if ($type === "blade") return $this->bladeComment($mark);
+  }
+  public function start($type = "php") {
+    $mark = "@gen:start " . $this->mark . " - do not remove";
+
+    if ($type === "php") return $this->phpComment($mark);
+    if ($type === "html") return $this->htmlComment($mark);
+    if ($type === "blade") return $this->bladeComment($mark);
+  }
+  public function end($type = "php") {
+    $mark = "@gen:end " . $this->mark . " - do not remove";
+
+    if ($type === "php") return $this->phpComment($mark);
+    if ($type === "html") return $this->htmlComment($mark);
+    if ($type === "blade") return $this->bladeComment($mark);
   }
 
   public static function hasMark(string $string, string $mark, string $type = ":start|:end|") : bool {
@@ -25,11 +51,11 @@ class Marker {
   }
 
   public static function removeLineMark(string $string, string $mark) {
-    return preg_replace("/\r?\n(?!\r?\n).*\/\/ @gen " . $mark . ".*/i", "", $string);
+    return preg_replace("/\r?\n(?!\r?\n).*(\/\/|<!--|{{--) @gen " . $mark . ".*/i", "", $string);
   }
 
   public static function removeMark(string $string, string $mark) {
-    return preg_replace("/\r?\n(?!\r?\n).*\/\/ @gen:start " . $mark . "[\S\s]*?\/\/ @gen:end " . $mark . ".*/i", "", $string);
+    return preg_replace("/\r?\n(?!\r?\n).*(\/\/|<!--|{{--) @gen:start " . $mark . "[\S\s]*?(\/\/|<!--|{{--) @gen:end " . $mark . ".*/i", "", $string);
   }
 
   public static function getStartMarkLineNumber(string $string, string $mark) : ?int {

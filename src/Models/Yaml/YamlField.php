@@ -12,18 +12,24 @@ class YamlField extends YamlBaseClass {
     public YamlFieldType $type;
     public $typeProps = [];
 
-    public $fillable = true;
-    public $casts = null;
-    public $appends = false;
-    public $hidden = false;
+    public $fillable;
+    public $casts;
+    public $appends;
+    public $hidden;
 
-    public $nullable = true;
-    public $default = null;
-    public $rules = "";
-    public $editable = true;
+    public $nullable;
+    public $default;
+    public $rules;
+
+    public $listable;
+    public $editable;
+    public $creatable;
+    public $searchable;
+    public $filterable;
+    public $sortable;
 
     public YamlModel $parent;
-    public $title;
+    public $label;
 
     public function __construct($data, $slug, &$parent)
     {
@@ -31,7 +37,6 @@ class YamlField extends YamlBaseClass {
         $this->parent = &$parent;
         $this->slug = $slug;
         $this->data = $data;
-
 
         $this->type = new YamlFieldType($this->get('type', null), $this);
 
@@ -42,12 +47,16 @@ class YamlField extends YamlBaseClass {
         $this->setCasts();
         $this->setAppends();
         $this->setHidden();
-        $this->setEditable();
-        $this->setTitle();
-
+        $this->setLabel();
         $this->setRules();
-
         $this->setMigration();
+
+        $this->setListable();
+        $this->setEditable();
+        $this->setCreatable();
+        $this->setSearchable();
+        $this->setFilterable();
+        $this->setSortable();
     }
 
     /**
@@ -81,12 +90,50 @@ class YamlField extends YamlBaseClass {
         $this->hidden = $this->get('hidden', false);
     }
 
-    private function setEditable() {
-        $this->editable = $this->get('editable', $this->type->defaultEditable());
+    public function getCrudables() {
+        return [
+            'listable' => $this->listable,
+            'editable' => $this->editable,
+            'creatable' => $this->creatable,
+            'searchable' => $this->searchable,
+            'filterable' => $this->filterable,
+            'sortable' => $this->sortable,
+        ];
     }
 
-    private function setTitle() {
-        $this->title = $this->get('title', Str::to($this->slug, 'studly'));
+    private function setListable() {
+        $this->listable = $this->get('listable', false);
+    }
+    private function setEditable() {
+        $this->editable = $this->get('editable', in_array($this->slug, [
+            'id', 'created_at', 'deleted_at', 'updated_at'
+        ]) ? false: true);
+    }
+    private function setCreatable() {
+        $this->creatable = $this->get('creatable', in_array($this->slug, [
+            'id', 'created_at', 'deleted_at', 'updated_at'
+        ]) ? false: true);
+    }
+    private function setSearchable() {
+        $excludedBySlug = in_array($this->slug, [
+            'id', 'created_at', 'deleted_at', 'updated_at'
+        ]);
+        $excludedByType = in_array($this->type->php, [
+            'bool'
+        ]);
+
+        $this->searchable = $this->get('searchable', $excludedBySlug || $excludedByType ? false: true);
+    }
+    private function setFilterable() {
+        $this->filterable = $this->get('filterable', false);
+    }
+
+    private function setSortable() {
+        $this->sortable = $this->get('sortable', true);
+    }
+
+    private function setLabel() {
+        $this->label = $this->get('label', Str::to($this->slug, 'studly'));
     }
 
     private function setRules() {

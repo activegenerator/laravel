@@ -11,14 +11,17 @@ class YamlModel extends YamlBaseClass
     public YamlCollection $fields;
     public YamlCollection $relations;
     public $data = [];
-    public YamlSchema $parent;
+    public YamlSchema $parentYaml;
 
     public $table;
+    // ModelName
+    public $name;
+    public $nameFull;
 
-    public function __construct($yamlData, $yamlModelName, YamlSchema &$parent)
+    public function __construct($yamlData, $yamlModelName, YamlSchema &$parentYaml)
     {
         parent::__construct();
-        $this->parent = &$parent;
+        $this->parentYaml = &$parentYaml;
         $this->data = $yamlData;
 
         $this->setName($yamlModelName);
@@ -40,13 +43,13 @@ class YamlModel extends YamlBaseClass
             }
         }
 
-        $defaultRelations = $this->fields
-            ->select(fn ($x) => $x->type->defaultRelation())
+        $relatedRelations = $this->fields
+            ->select(fn ($x) => $x->type->relatedRelation())
             ->filter(fn ($x) => $x);
 
-        if ($defaultRelations->any()) {
-            foreach ($defaultRelations as $rel) {
-                if (!$this->relations->any(fn ($x) => $x->field === $rel->field)) {
+        if ($relatedRelations->any()) {
+            foreach ($relatedRelations as $rel) {
+                if (!$this->relations->any(fn ($x) => $x->args->foreignKey === $rel->args->foreignKey)) {
                     $this->relations = $this->relations->add($rel);
                 }
             }
@@ -55,7 +58,7 @@ class YamlModel extends YamlBaseClass
 
     private function setTable()
     {
-        $this->table = $this->get('config.tableName', $this->getName('table'));
+        $this->table = $this->get('config.table', $this->getName('table'));
     }
 
     private function setName($name) {
@@ -85,11 +88,15 @@ class YamlModel extends YamlBaseClass
         return $shouldOutput && !$shouldIgnore;
     }
 
+    public function getLabel($form) {
+        return parent::get("config.label." . $form, $this->getName($form));
+    }
+
     public function get($query, $default = '')
     {
         if (str_contains($query, "config.")) {
             // Also check parent
-            return Arr::get($this->data, $query, $this->parent->get($query, $default));
+            return Arr::get($this->data, $query, $this->parentYaml->get($query, $default));
         }
 
         return parent::get($query, $default);

@@ -29,7 +29,7 @@ class {{ $yaml->getName('Entity') }}Factory extends Factory
         @endif
     @endif
     @if($field->type->database == "foreignId")
-          '{{ $field->slug }}' => {{ $field->type->defaultRelation()->modelFull }}::factory(),
+          '{{ $field->slug }}' => {{ $field->type->relatedRelation()->relatedFull }}::factory(),
     @endif
 @endforeach
         ];

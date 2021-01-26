@@ -64,26 +64,29 @@ class YamlSchema extends YamlBaseClass {
                     // var_dump($relation);
                     // The default relation will only be available when the related model
                     // is also defined in the yaml file
-                    $default = $relation->defaultRelation();
+                    $default = $relation->relatedRelation();
 
                     // Auto-create opposite relation when needed
                     if ($default) {
-                        $model2 = $this->models->first(fn($x) => $x->name == $default->parent->name);
+                        $model2 = $this->models->first(fn($x) => $x->name == $default->parentYaml->name);
 
-                        if (!$model2->relations->any(fn($x) => $x->model === $default->model)) {
+                        if (!$model2->relations->any(fn($x) => $x->related === $default->related)) {
                             $model2->relations = $model2->relations->add($default);
                         }
                     }
 
+                    // var_dump("c", $relation->args->table);
+
                     // Auto-create a pivot table when needed
                     if (!$relation->get('autocreatedBy') &&
-                        $relation->type === "belongsToMany" &&
-                        !$this->models->any(fn($x) => $x->table === $relation->table)) {
+                        $relation->args->table &&
+                        ($relation->is === "belongsToMany" || $relation->is === "morphToMany") &&
+                        !$this->models->any(fn($x) => $x->table === $relation->args->table)) {
 
-                        $modelName = Str::to($relation->table, 'studly');
+                        $modelName = Str::to($relation->args->table, 'studly');
 
                         $data = ['fields' => [], 'config' => [
-                            'tableName' => $relation->table,
+                            'table' => $relation->args->table,
                             'include' => ['MigrationGenerator']
                         ]];
 
@@ -94,17 +97,25 @@ class YamlSchema extends YamlBaseClass {
                             $data['config']['exclude'] = array_merge($data['config']['exclude'], $model->get('config.exclude'));
                         }
 
-                        $data['fields'][$relation->foreignPivotKey] = [
+                        $data['fields'][$relation->args->foreignPivotKey] = [
                             'type' => 'foreignId',
-                            'references' => 'id',
-                            'on' => Str::to($relation->foreignPivotKey, 'table')
+                            // 'references' => 'id',
+                            // 'on' => Str::to($relation->args->foreignPivotKey, 'table')
                         ];
 
-                        $data['fields'][$relation->relatedPivotKey] = [
+                        $data['fields'][$relation->args->relatedPivotKey] = [
                             'type' => 'foreignId',
-                            'references' => 'id',
-                            'on' => Str::to($relation->relatedPivotKey, 'table')
+                            // 'references' => 'id',
+                            // 'on' => Str::to($relation->args->foreignPivotKey, 'table')
                         ];
+
+                        if ($relation->is === "morphToMany") {
+                            $data['fields'][$relation->args->type] = [
+                                'type' => 'string',
+                            ];
+                        }
+
+                        $data['autoCreatedBy'] = $relation;
 
                         $this->models = $this->models->add(new YamlModel($data, $modelName, $this));
                     }
@@ -128,7 +139,7 @@ class YamlSchema extends YamlBaseClass {
             }
 
             if ($model->get('config.autoTimestamps', true) &&!$model->fields->first(fn($x) => $x->slug === "created_at")) {
-                $model->fields = $model->fields->prepend(new YamlField(['type' => 'timestamp', 'nullable' => false], 'created_at', $model));
+                $model->fields = $model->fields->prepend(new YamlField(['type' => 'timestamp', 'nullable' => true], 'created_at', $model));
             }
 
             if ($model->get('config.autoIds', true) && !$model->fields->first(fn($x) => $x->slug === "id")) {

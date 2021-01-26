@@ -10,9 +10,40 @@ config:
   exclude:  # Set this use all generators except the specified
     # - ModelGenerator
 
+
+
+Store:
+  relations:
+    - is: hasOneThrough
+      related: Tag #!
+      through: Product #!
+      firstKey: store_id # on Product
+      secondKey: product_id # on Tag
+      localKey: id # on Store
+      secondLocalKey: id # on Product
+      table1: products #
+      table2: tags
+      prop: tag
+    - is: hasManyThrough
+      related: Tag #!
+      through: Product #!
+      firstKey: store_id # on Product
+      secondKey: product_id # on Tag
+      localKey: id # on Store
+      secondLocalKey: id # on Product
+      table1: products #
+      table2: tags
+      prop: tags
+
+
 Product:
   config:
     ...
+    table: products
+    deaultRelatedTitleField: name
+    label:
+      plural: Producten
+      singular: Product
   code: # Add custom code to some files. Example:
     model:
       imports: |
@@ -37,20 +68,105 @@ Product:
       type: foreignId # Mandatory  - Results in migration: $table->foreignId('category_id')->references('id')->on('categories');
       references: id
       on: categories
+    store_id:
+      type: foreignId # Mandatory  - Results in migration: $table->foreignId('category_id')->references('id')->on('categories');
+      references: id
+      on: stores
   relations:
-    - type: belongsTo # Mandatory  - Other types: hasMany hasOne
-      model: File # Mandatory
-      table: files
-      prop: files
-      foreignKey: download_id
-    - type: belongsToMany # Mandatory
-      model: File # Mandatory
-      table: 'file_products'
-      foreignPivotKey: 'product_id'
-      relatedPivotKey: 'file_id'
-      prop: files
+    - is: hasOne
+      related: Tag #!
+      foreignKey: product_id
+      localKey: id
+      table: tags #
+      prop: tag
+    - is: hasMany
+      related: Tag #!
+      foreignKey: product_id
+      localKey: id
+      table: tags #
+      prop: tags
+    - is: morphOne
+      related: Image  #!
+      name: imagable  #!
+      type: imagable_type
+      id: imagable_id
+      localKey: id
+      prop: image #
+    - is: morphMany
+      related: Image  #!
+      name: imagable #!
+      type: imagable_type
+      id: imagable_id
+      localKey: id
+      prop: images #
 
-Category:
+    - is: belongsToMany # Mandatory
+      related: File # Mandatory  #!
+      table: file_product
+      foreignPivotKey: product_id
+      relatedPivotKey: file_id
+      parentKey: id # on Product
+      relatedKey: id # on File
+      relation: files # geabasseerd op prop
+      prop: files #
+
+Tag:
   fields:
-    name:
-      type: string # Mandatory
+    product_id:
+      type: foreignId # Mandatory  - Results in migration: $table->foreignId('category_id')->references('id')->on('categories');
+      references: id
+      on: products
+  relations:
+    - is: belongsTo
+      related: Product #!
+      foreignKey: product_id
+      ownerKey: id
+      relation: product
+      table: products #
+      prop: product
+    - is: morphedByMany
+      related: Post #!
+      name: taggable #!
+      table: taggables
+      foreignPivotKey: tag_id
+      relatedPivotKey: taggable_id
+      parentKey: id
+      relatedKey: id
+      prop: posts #
+
+Post:
+  relations:
+    - is: morphToMany
+      related: Tag #!
+      name: taggable #!
+      table: taggables
+      foreignPivotKey: taggable_id
+      relatedPivotKey: tag_id
+      parentKey: id
+      relatedKey: id
+      inverse: false # ?
+      prop: tags #
+
+
+Image:
+    relations:
+      - is: morphTo
+        name: imagable (__FUNCTION__)
+        type: imagable_type
+        id: imagable_id
+        ownerKey: id
+        prop: imagable #
+
+File:
+  relations:
+    - is: belongsToMany # Mandatory
+      related: Product # Mandatory
+      table: file_product
+      foreignPivotKey: file_id
+      relatedPivotKey: product_id
+      parentKey: id # on File
+      relatedKey: id # on Product
+      relation: products # geabasseerd op prop
+      prop: products #
+
+FileProduct:

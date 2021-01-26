@@ -52,27 +52,20 @@ class YamlFieldType extends BaseClass {
         ][$this->database] ?? true;
     }
 
-    public function defaultEditable() {
-        return [
-            'id' => false,
-            'updated_at' => false,
-            'created_at' => false
-        ][$this->database] ?? true;
-    }
-
-    public function defaultRelation() {
+    public function relatedRelation() {
         if ($this->database == "foreignId") {
             $slug = $this->parent->slug;
             $slugNoId = str_replace("_id", "", $slug);
             $on = $this->parent->get('on', $slugNoId);
-            $onModel = Str::to($on, "studly singular");
+            $onRelated = Str::to($on, "studly singular");
 
             return new YamlRelation([
-                'model' => $onModel,
+                'is' => 'belongsTo',
+                'related' => $onRelated,
+                'foreignKey' => $slug,
+                'autocreatedBy' => $this->parent,
                 'prop' => $slugNoId,
-                'field' => $slug,
-                'autocreatedBy' => $this->parent, // field
-            ], 'belongsTo', $this->parent->parent);
+            ], $this->parent->parent);
         }
 
         return null;

@@ -20,7 +20,7 @@ class ModelGenerator extends Generator {
   public function extend() {
     // Used for the use statements
     $this->vars['usedTypes'] = $this->yaml->relations
-      ->select(fn($x) => "Illuminate\Database\Eloquent\Relations\\" . $x->Type)
+      ->select(fn($x) => "Illuminate\Database\Eloquent\Relations\\" . $x->Is)
       ->unique()
       ->filter(fn($x) => class_exists($x));
   }

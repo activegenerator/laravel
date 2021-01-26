@@ -7,52 +7,91 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class YamlRelation extends YamlBaseClass {
-
+    public $is;
     public $prop;
+    public $label;
+    public $rules;
+    public YamlRelationArgs $args;
 
-    public $model; // The other model
-    public $modelFull; // The other model including namespace
-    public $modelOriginal; // // The other model as given
-    public $foreignKey;
-    public $type;
+    public $related; // The other model
+    public $relatedFull; // The other model including namespace
+    public $relatedOriginal; // // The other model as given
+    public ?YamlModel $relatedYaml; // The other model in yaml if existing
+    public $relatedTitleField;
 
-    public $table; // Pivottable or other table name
-    public $foreignPivotKey;
-    public $relatedPivotKey;
+    public $listable;
+    public $editable;
+    public $creatable;
+    public $searchable;
+    public $filterable;
+    public $sortable;
 
-    public YamlModel $parent; // the own yaml model
-    public ?YamlModel $related; // The other model in yaml if existing
+    // public $foreignKey;
 
-    public function __construct($data, $type, &$parent)
+    // public $table; // Pivottable or other table name
+    // public $foreignPivotKey;
+    // public $relatedPivotKey;
+
+    public YamlModel $parentYaml; // the own yaml model
+
+    public function __construct($data, &$parentYaml)
     {
         parent::__construct();
-        $this->parent = &$parent;
-        $this->type = $type;
-        $this->Type = ucfirst($type);
+        $this->parentYaml = &$parentYaml;
+        $this->is = $data['is'];
+        $this->Is = ucfirst($this->is);
         $this->data = $data;
 
-        $this->setModel();
+        if ( ($this->is === "hasOneThrough" || $this->is === "hasManyThrough") &&
+            !$this->get('through')) {
+            throw new Exception("Please define a 'through' property on the " . $this->is . "-relation in '" . $this->parentYaml->name . ".relations");
+        }
+
+        if ( ($this->is === "morphOne" || $this->is === "morphMany" || $this->is === "morphedByMany" || $this->is == "morphToMany") &&
+            !$this->get('name')) {
+            throw new Exception("Please define a 'name' property on the " . $this->is . "-relation in '" . $this->parentYaml->name . ".relations");
+        }
+
+        $this->setRelated();
         $this->setProp();
-        $this->setForeignKey();
+        // $this->setForeignKey();
+
+        $this->setRelatedTitleField();
+        $this->setLabel();
+        $this->setRules();
+
+        $this->args = new YamlRelationArgs($this);
+
+        $this->setListable();
+        $this->setEditable();
+        $this->setCreatable();
+        $this->setSearchable();
+        $this->setFilterable();
+        $this->setSortable();
 
         // BelongsToMany
-        $this->setTable();
-        $this->setForeignPivotKey();
-        $this->setRelatedPivotKey();
+        // $this->setTable();
+        // $this->setForeignPivotKey();
+        // $this->setRelatedPivotKey();
     }
 
     /**
      * One field can bind to multiple relations
      */
-    public static function bind($data, $parent): YamlCollection
+    public static function bind($data, $parentYaml): YamlCollection
     {
-        return new YamlCollection([new YamlRelation($data, $data['type'], $parent)]);
+        return new YamlCollection([new YamlRelation($data, $parentYaml)]);
     }
 
-    public function defaultRelation() : ?YamlRelation {
-        if (!$this->related) return null;
+    public function relatedFields() : array {
 
-        if ($this->type == "belongsTo") {
+    }
+
+    public function relatedRelation() : ?YamlRelation {
+        if (!$this->relatedYaml) return null;
+        // $defaultProp = $this->parentYaml->getName('camel ' . ($this->isSingular() ? 'singular' : 'plural'));
+
+        if ($this->is == "belongsTo") {
             $field = $this->get('autocreatedBy', null);
 
             if ($field && $field->get('reference', 'id') !== "id") {
@@ -60,79 +99,163 @@ class YamlRelation extends YamlBaseClass {
                 // @todo Do something with it
             }
 
-            return new YamlRelation([
-                'model' => $this->parent->getName('Entity'),
+            return new YamlRelation(array_merge([
+                'is' => 'hasMany',
+                'related' => $this->parentYaml->getName('Entity'),
+                'foreignKey' => $this->args->foreignKey,
+                'localKey' => $this->args->ownerKey,
                 'autocreatedBy' => $this,
-            ], 'hasMany', $this->related);
+                'prop' => $this->parentYaml->str('name', 'camel plural'),
+            ], $this->getCrudables()), $this->relatedYaml);
         }
 
-        if ($this->type == "belongsToMany") {
-            return new YamlRelation([
-                'model' => $this->parent->getName('Entity'),
-                'table' => $this->table,
+        if ($this->is == "hasMany" || $this->is == "hasOne") {
+            return new YamlRelation(array_merge([
+                'is' => 'belongsTo',
+                'related' => $this->parentYaml->getName('Entity'),
+                'foreignKey' => $this->args->foreignKey,
+                'ownerKey' => $this->args->localKey,
+                'prop' => $this->parentYaml->str('name', 'camel singular'),
+            ], $this->getCrudables()), $this->relatedYaml);
+        }
+
+        if ($this->is == "belongsToMany") {
+            return new YamlRelation(array_merge([
+                'is' => 'belongsToMany',
+                'related' => $this->parentYaml->getName('Entity'),
+                'table' => $this->args->table,
+                'foreignPivotKey' => $this->args->relatedPivotKey,
+                'relatedPivotKey' => $this->args->foreignPivotKey,
+                'parentKey' => $this->args->relatedKey,
+                'relatedKey' => $this->args->parentKey,
                 'autocreatedBy' => $this,
-            ], 'belongsToMany', $this->related);
+                'prop' => $this->parentYaml->str('name', 'camel plural'),
+            ], $this->getCrudables()), $this->relatedYaml);
+        }
+
+        if ($this->is == "morphToMany") {
+            return new YamlRelation(array_merge([
+                'is' => 'morphedByMany',
+                'related' => $this->parentYaml->getName('Entity'),
+                'name' => $this->args->name,
+                'table' => $this->args->table,
+                'foreignPivotKey' => $this->args->relatedPivotKey,
+                'relatedPivotKey' => $this->args->foreignPivotKey,
+                'parentKey' => $this->args->relatedKey,
+                'relatedKey' => $this->args->parentKey,
+                'autocreatedBy' => $this,
+                'prop' => $this->parentYaml->str('name', 'camel plural'),
+            ], $this->getCrudables()), $this->relatedYaml);
+        }
+
+        if ($this->is == "morphedByMany") {
+            return new YamlRelation(array_merge([
+                'is' => 'morphToMany',
+                'related' => $this->parentYaml->getName('Entity'),
+                'name' => $this->args->name,
+                'table' => $this->args->table,
+                'foreignPivotKey' => $this->args->relatedPivotKey,
+                'relatedPivotKey' => $this->args->foreignPivotKey,
+                'parentKey' => $this->args->relatedKey,
+                'relatedKey' => $this->args->parentKey,
+                'autocreatedBy' => $this,
+                'prop' => $this->parentYaml->str('name', 'camel plural'),
+            ], $this->getCrudables()), $this->relatedYaml);
+        }
+
+        if ($this->is == "morphOne" || $this->is == "morphMany") {
+            return new YamlRelation(array_merge([
+                'is' => 'morphTo',
+                'name' => $this->args->name,
+                'type' => $this->args->type,
+                'id' => $this->args->id,
+                'ownerKey' => $this->args->localKey,
+                'prop' => $this->args->name,
+                'prop' => $this->parentYaml->str('name', 'camel ' . ($this->is == "morphOne" ? 'singular' : 'plural')),
+            ], $this->getCrudables()), $this->relatedYaml);
         }
 
         return null;
     }
 
-    private function setModel() {
-        $this->modelOriginal = $model = $this->get('model');
+    private function setRelated() {
+        $this->relatedOriginal = $related = $this->get('related');
 
-        if (!$model) {
-            throw new Exception("Please define a model on '" . $this->type . "'-relation on '" . $this->parent->name . "'");
+        if (!$related && $this->is !== "morphTo") {
+            throw new Exception("Please define a 'related' property on the " . $this->is . "-relation in '" . $this->parentYaml->name . ".relations");
         }
 
-        if (Str::contains($model, '\\')) {
-            $this->model = Str::afterLast($model, '\\');
-            $this->modelFull = $model;
+        if (Str::contains($related, '\\')) {
+            $this->related = Str::afterLast($related, '\\');
+            $this->relatedFull = $related;
         } else {
-            $this->model = $model;
-            $this->modelFull = 'App\Models\\' . $model;
+            $this->related = $related;
+            $this->relatedFull = '\App\Models\\' . $related;
         }
 
-        $this->related = $this->parent->parent->models->first(fn($x) => $x->name == $this->model);
+        $this->relatedYaml = $this->parentYaml->parentYaml->models->first(fn($x) => $x->name == $this->related);
     }
 
     private function setProp() {
-        $this->prop = $this->get('prop', Str::to($this->model, $this->isSingular() ? "singular snake" : "plural snake"));
-    }
-
-    private function setForeignKey() {
-        $this->field = $this->get('foreignKey', Str::to($this->model, "singular snake") . "_id");
-    }
-
-    private function setTable() {
-        $table = $this->related ? $this->related->table : Str::to($this->model, "plural snake");
-
-        if ($this->type == "belongsToMany") {
-            $models = new YamlCollection([
-                $this->parent->getName('entity'),
-                Str::to($this->model, "singular snake")
-            ]);
-            $models = $models->sort("asc");
-            $table = $models->first() . "_" . $models->last();
+        $default = Str::to($this->related, $this->isSingular() ? "singular snake" : "plural snake");
+        if ($this->is === "morphTo") {
+            $default = Str::to($this->related, "singular snake") . "able";
         }
-
-        $this->table = $this->get('table', $table);
+        $this->prop = $this->get('prop', $default);
     }
 
-    private function setForeignPivotKey() {
-        $fpk = $this->parent->getName('entity') . "_id";
-        $this->foreignPivotKey = $this->get('foreignPivotKey', $fpk);
+    private function setLabel() {
+        $this->label = $this->get('label', Str::to($this->prop, $this->isSingular() ? "singular studly" : "plural studly"));
     }
 
-    private function setRelatedPivotKey() {
-        $rpk = Str::to($this->model, "singular snake") . "_id";
-        $this->relatedPivotKey = $this->get('relatedPivotKey', $rpk);
+    private function setRules() {
+        $this->rules = $this->get('rules', '');
+    }
+
+    private function setRelatedTitleField() {
+        if ($this->relatedYaml)
+            $this->relatedTitleField = $this->relatedYaml->get('config.titleField', 'id');
+        else
+            $this->relatedTitleField = $this->get('relatedTitleField', $this->parentYaml->parentYaml->get('config.deaultRelatedTitleField', 'id'));
+    }
+
+    public function getCrudables() {
+        return [
+            'listable' => $this->listable,
+            'editable' => $this->editable,
+            'creatable' => $this->creatable,
+            'searchable' => $this->searchable,
+            'filterable' => $this->filterable,
+            'sortable' => $this->sortable,
+        ];
+    }
+
+    private function setListable() {
+        $this->listable = $this->get('listable', false);
+    }
+    private function setEditable() {
+        $this->editable = $this->get('editable', true);
+    }
+    private function setCreatable() {
+        $this->creatable = $this->get('creatable', true);
+    }
+    private function setSearchable() {
+        $this->searchable = $this->get('searchable', false);
+    }
+    private function setFilterable() {
+        $this->filterable = $this->get('filterable', false);
+    }
+    private function setSortable() {
+        $this->sortable = $this->get('sortable', false);
     }
 
     public function isSingular() {
-        return [
-            'belongsTo' => true,
-            'hasOne' => true
-        ][$this->type] ?? false;
+        return in_array($this->is, [
+            'belongsTo',
+            'hasOne',
+            'hasOneThrough',
+            'morphOne'
+        ]);
     }
 
 }

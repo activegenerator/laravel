@@ -33,9 +33,11 @@ class FakerHelper {
       $props = self::getFakerProps();
       $matches = [];
 
+
       $override = [
         'lat' => 'latitude',
-        'lng' => 'longitude'
+        'lng' => 'longitude',
+        'title' => 'sentence'
       ];
 
       if( !empty($override[$slug]) ) {

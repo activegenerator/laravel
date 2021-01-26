@@ -8,11 +8,16 @@ use ActiveGenerator\Laravel\Helpers\PolyVar;
 use ActiveGenerator\Laravel\Helpers\Template;
 use ActiveGenerator\Laravel\Models\Yaml\YamlModel;
 use ActiveGenerator\Laravel\Traits\ClassNameTrait;
+use Error;
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use ParseError;
 
 abstract class Generator extends BaseClass {
 
@@ -26,6 +31,8 @@ abstract class Generator extends BaseClass {
 
   public Filesystem $fs;
   public Command $command;
+
+  public array $currentDefinition = [];
 
   /**
    * Constructor
@@ -96,12 +103,16 @@ abstract class Generator extends BaseClass {
     $definition = $this->output();
     $definitions = isset($definition['template']) ? [$definition] : $definition;
 
-    foreach($definitions as $definition) {
+    foreach($definitions as &$definition) {
+        $this->vars['marker'] = new Marker($this->yaml->name . " " . basename($definition['template']));
+
         $outputPath = Template::compile($definition['output'], $this->vars);
         $outputPath = preg_replace("/\/\/+/", "/", $outputPath);
         // $this->command->info($this->class);
 
         $contents = $this->render($definition);
+        $definition['rendered'] = $contents;
+        $definition['outputPath'] = $outputPath;
 
         if ($contents === null) continue;
 
@@ -111,6 +122,8 @@ abstract class Generator extends BaseClass {
 
         $this->write($outputPath, $contents);
     }
+
+    return $definitions;
   }
 
   /**
@@ -134,6 +147,10 @@ abstract class Generator extends BaseClass {
     return realpath($this->var('userTemplatesDir') . '/' . $this->class . '/' . $this->getRelativeTemplate($definition));
   }
 
+  public static function onAllGenerated($renderedItems) {
+
+  }
+
   /**
    * Undocumented function
    *
@@ -142,13 +159,27 @@ abstract class Generator extends BaseClass {
    */
   public function render($definition) : ?string {
     $userTemplate = $this->getUserTemplate($definition);
-    $templatePath = $this->fs->exists($userTemplate) ? $userTemplate : $definition['template'];
+    $templatePath = File::exists($userTemplate) ? $userTemplate : $definition['template'];
 
     $template = Template::get($templatePath);
 
     if (!$template) return null;
 
-    return ($definition['prepend'] ?? $this->defaultPrepend) . Template::compile($template, $this->vars) . ($definition['append'] ?? $this->defaultAppend);
+    try {
+    $output =  ($definition['prepend'] ?? $this->defaultPrepend) . Template::compile($template, $this->vars) . ($definition['append'] ?? $this->defaultAppend);
+    } catch(Exception $err) {
+        // dd($err);
+        $this->command->error("Error in template '" . $templatePath . "'");
+        $this->command->error($err->getMessage());
+        exit();
+    } catch(Error $err) {
+        // dd($err);
+        $this->command->error("Error in template '" . $templatePath . "'");
+        $this->command->error($err->getMessage());
+        exit();
+    }
+
+    return $output;
   }
 
   /**
@@ -172,47 +203,8 @@ abstract class Generator extends BaseClass {
    * @param boolean $insertBefore
    * @return void
    */
-  public function insert(string $filename, string $contents, ?string $regex = null, bool $insertBefore = true) {
-    try {
-      $contents = trim($contents);
-      $changedFile = $this->fs->get($filename);
-
-      $changedFileLines = explode(PHP_EOL, $changedFile);
-
-      $start = Marker::getStartMarkLineNumber($changedFile, $this->var('marker')->mark);
-      $end = Marker::getEndMarkLineNumber($changedFile, $this->var('marker')->mark);
-
-      // The marker is found, let's replace this
-      if ($start !== null && $end !== null) {
-        $contentsLines = explode(PHP_EOL, $contents);
-        array_splice($changedFileLines, $start, $end - $start + 1, $contentsLines);
-
-        $contents = implode(PHP_EOL, $changedFileLines);
-      } else {
-        // Replace before/after regex
-        if ($regex !== null) {
-          $found = preg_match_all($regex, $changedFile, $matches, PREG_OFFSET_CAPTURE);
-
-          if ($found) {
-            foreach($matches[0] ?? [] as $match) {
-              $matchValue = $match[0];
-              $matchChar = $match[1];
-
-              $before = $insertBefore ? substr($changedFile, 0, $matchChar) : substr($changedFile, 0, $matchChar + strlen($matchValue));
-              $after = $insertBefore ? substr($changedFile, $matchChar) : substr($changedFile, $matchChar + strlen($matchValue));
-
-              $contents = $before . PHP_EOL . $contents . PHP_EOL . $after;
-            }
-          } else {
-            // Not found? Append
-            $contents = $changedFile . PHP_EOL . $contents;
-          }
-        } else {
-          // No regex? Append
-          $contents = $changedFile . PHP_EOL . $contents;
-        }
-      }
-    } catch(FileNotFoundException $ex) {}
+  public function insert(string $filename, string $contents, ?string $regex = null, bool $insertBefore = true, string $mode = 'first') {
+    $contents = static::insertText($filename, $contents, $this->var('marker')->mark, $regex, $insertBefore, $mode);
 
     $this->put($filename, $contents);
   }
@@ -225,8 +217,8 @@ abstract class Generator extends BaseClass {
    * @param string $regex
    * @return void
    */
-  public function insertBefore(string $filename, string $contents, string $regex) {
-    return $this->insert($filename, $contents, $regex, true);
+  public function insertBefore(string $filename, string $contents, string $regex, $mode = 'first') {
+    return $this->insert($filename, $contents, $regex, true, $mode);
   }
 
   /**
@@ -237,8 +229,8 @@ abstract class Generator extends BaseClass {
    * @param string $regex
    * @return void
    */
-  public function insertAfter(string $filename, string $contents, string $regex) {
-    return $this->insert($filename, $contents, $regex, false);
+  public function insertAfter(string $filename, string $contents, string $regex, $mode = 'first') {
+    return $this->insert($filename, $contents, $regex, false, $mode);
   }
 
   /**
@@ -249,7 +241,7 @@ abstract class Generator extends BaseClass {
    * @return void
    */
   protected function put(string $filename, string $contents) {
-    if ($this->fs->exists($filename) && !$this->command->option('force')) {
+    if (File::exists($filename) && !$this->command->option('force')) {
       $answer = "?";
       while($answer != "y" && $answer != "n") {
         if (!$this->runningInConsole) {
@@ -269,8 +261,57 @@ abstract class Generator extends BaseClass {
     }
 
     if ($answer === "y") {
-      $this->fs->ensureDirectoryExists($this->fs->dirname($filename));
-      $this->fs->put($filename, $contents);
+      File::ensureDirectoryExists(File::dirname($filename));
+      File::put($filename, $contents);
     }
   }
+
+
+  public static function insertText(string $filename, string $contents, string $mark, ?string $regex = null, bool $insertBefore = true, string $mode = 'first') {
+   try {
+     $contents = trim($contents, "\n\r");
+     $changedFile = File::get($filename);
+
+     $changedFileLines = explode(PHP_EOL, $changedFile);
+
+     $start = Marker::getStartMarkLineNumber($changedFile, $mark);
+     $end = Marker::getEndMarkLineNumber($changedFile, $mark);
+
+     // The marker is found, let's replace this
+     if ($start !== null && $end !== null) {
+       $contentsLines = explode(PHP_EOL, $contents);
+       array_splice($changedFileLines, $start, $end - $start + 1, $contentsLines);
+
+       $contents = implode(PHP_EOL, $changedFileLines);
+     } else {
+       // Replace before/after regex
+       if ($regex !== null) {
+         $found = preg_match_all($regex, $changedFile, $matches, PREG_OFFSET_CAPTURE);
+
+         if ($found) {
+           foreach($matches[0] ?? [] as $index => $match) {
+             if ($mode == 'last' && count($matches[0]) - 1 !== $index) continue;
+             if ($mode == 'first' && $index > 0) continue;
+
+             $matchValue = $match[0];
+             $matchChar = $match[1];
+
+             $before = $insertBefore ? substr($changedFile, 0, $matchChar) : substr($changedFile, 0, $matchChar + strlen($matchValue) + 1);
+             $after = $insertBefore ? substr($changedFile, $matchChar) : substr($changedFile, $matchChar + strlen($matchValue) + 1);
+
+             $contents = $before . PHP_EOL . $contents . PHP_EOL . $after;
+           }
+         } else {
+           // Not found? Append
+           $contents = $changedFile . PHP_EOL . $contents;
+         }
+       } else {
+         // No regex? Append
+         $contents = $changedFile . PHP_EOL . $contents;
+       }
+     }
+   } catch(FileNotFoundException $ex) {}
+
+   return $contents;
+ }
 }

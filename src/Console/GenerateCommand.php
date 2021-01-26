@@ -48,6 +48,8 @@ class GenerateCommand extends Command
 
         $index = 0;
 
+        $generatedItems = [];
+
         foreach($yamlSchema->models as $yamlModel) {
           $this->newLine();
           $this->line("\033[32m" . $yamlModel->name . "\033[39m:");
@@ -65,10 +67,22 @@ class GenerateCommand extends Command
             $gen->fs = $this->fs;
             $gen->command = $this;
             $gen->runningInConsole = $this->app->runningInConsole();
-            $gen->generate();
+
+            if (!isset($generatedItems[$generator])) $generatedItems[$generator] = [];
+
+            $generatedItems[$generator][] = [
+                'generator' => $gen,
+                'generated' => $gen->generate()
+            ];
           }
 
           $index++;
+        }
+
+        foreach($generators as $generator) {
+            if (isset($generatedItems[$generator])) {
+                $generator::onAllGenerated($generatedItems[$generator]);
+            }
         }
 
         $this->info(PHP_EOL . 'Done!' . PHP_EOL);

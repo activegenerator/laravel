@@ -20,9 +20,9 @@ use {{ $usedType }};
 @endforeach
 @foreach($yaml->relations as $relation)
     @if($relation->isSingular())
- * @@property-read {{ $relation->model }} ${{ $relation->prop }},
+ * @@property-read {{ $relation->related }} ${{ $relation->prop }},
     @else
- * @@property-read {{ $relation->model }}[] ${{ $relation->prop }},
+ * @@property-read {{ $relation->related }}[] ${{ $relation->prop }},
     @endif
 @endforeach
  *
@@ -72,17 +72,11 @@ class {{ $yaml->getName("Entity") }} {!! $yaml->get('code.model.extends', 'exten
     ];
 {!! '' !!}
 @foreach($yaml->relations as $relation)
-@if(in_array($relation->type, ['belongsTo', 'hasOne', 'hasMany']))
-    public function {{ $relation->prop }}() : {{ ucfirst($relation->type) }}  {
-        return $this->{{ $relation->type }}({!! $relation->modelOriginal !!}::class, '{{ $relation->field }}');
+    public function {{ $relation->prop }}() {
+        return $this->{{ $relation->is }}({!! $relation->args->display() !!});
     }
-@endif
-@if(in_array($relation->type, ['belongsToMany']))
-    public function {{ $relation->prop }}() : {{ ucfirst($relation->type) }}  {
-        return $this->{{ $relation->type }}({!! $relation->modelOriginal !!}::class, '{{ $relation->table }}', '{{ $relation->foreignPivotKey }}', '{{ $relation->relatedPivotKey }}');
-    }
-@endif
-{!! '' !!}
+    {!! '' !!}
 @endforeach
+
 {!! $yaml->get('code.model.body') !!}
 }
