@@ -70,6 +70,14 @@ class {{ $yaml->getName("Entity") }} {!! $yaml->get('code.model.extends', 'exten
 @endif
 @endforeach
     ];
+
+    protected $attributes = [
+@foreach($yaml->fields as $field)
+@if($field->default)
+        '{{ $field->slug }}' => {{ is_string($field->default) ? "'$field->default'" : $field->default }},
+@endif
+@endforeach
+    ];
 {!! '' !!}
 @foreach($yaml->relations as $relation)
     public function {{ $relation->prop }}() {

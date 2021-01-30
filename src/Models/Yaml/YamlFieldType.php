@@ -64,6 +64,7 @@ class YamlFieldType extends BaseClass {
                 'related' => $onRelated,
                 'foreignKey' => $slug,
                 'autocreatedBy' => $this->parent,
+                'rules' => $this->parent->rules,
                 'prop' => $slugNoId,
             ], $this->parent->parent);
         }

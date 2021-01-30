@@ -37,7 +37,13 @@ class YamlRelation extends YamlBaseClass {
     public function __construct($data, &$parentYaml)
     {
         parent::__construct();
+
         $this->parentYaml = &$parentYaml;
+
+        if ( empty($data['is']) )  {
+            throw new Exception("Please specify an 'is' property on this relation in '" . $this->parentYaml->name . ".relations'");
+        }
+
         $this->is = $data['is'];
         $this->Is = ucfirst($this->is);
         $this->data = $data;
@@ -102,6 +108,7 @@ class YamlRelation extends YamlBaseClass {
             return new YamlRelation(array_merge([
                 'is' => 'hasMany',
                 'related' => $this->parentYaml->getName('Entity'),
+                'rules' => $this->rules,
                 'foreignKey' => $this->args->foreignKey,
                 'localKey' => $this->args->ownerKey,
                 'autocreatedBy' => $this,
@@ -113,6 +120,7 @@ class YamlRelation extends YamlBaseClass {
             return new YamlRelation(array_merge([
                 'is' => 'belongsTo',
                 'related' => $this->parentYaml->getName('Entity'),
+                'rules' => $this->rules,
                 'foreignKey' => $this->args->foreignKey,
                 'ownerKey' => $this->args->localKey,
                 'prop' => $this->parentYaml->str('name', 'camel singular'),
@@ -123,6 +131,7 @@ class YamlRelation extends YamlBaseClass {
             return new YamlRelation(array_merge([
                 'is' => 'belongsToMany',
                 'related' => $this->parentYaml->getName('Entity'),
+                'rules' => $this->rules,
                 'table' => $this->args->table,
                 'foreignPivotKey' => $this->args->relatedPivotKey,
                 'relatedPivotKey' => $this->args->foreignPivotKey,
@@ -137,6 +146,7 @@ class YamlRelation extends YamlBaseClass {
             return new YamlRelation(array_merge([
                 'is' => 'morphedByMany',
                 'related' => $this->parentYaml->getName('Entity'),
+                'rules' => $this->rules,
                 'name' => $this->args->name,
                 'table' => $this->args->table,
                 'foreignPivotKey' => $this->args->relatedPivotKey,
@@ -152,6 +162,7 @@ class YamlRelation extends YamlBaseClass {
             return new YamlRelation(array_merge([
                 'is' => 'morphToMany',
                 'related' => $this->parentYaml->getName('Entity'),
+                'rules' => $this->rules,
                 'name' => $this->args->name,
                 'table' => $this->args->table,
                 'foreignPivotKey' => $this->args->relatedPivotKey,

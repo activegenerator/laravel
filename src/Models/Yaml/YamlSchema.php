@@ -2,6 +2,7 @@
 
 namespace ActiveGenerator\Laravel\Models\Yaml;
 
+use ActiveGenerator\Laravel\Helpers\Template;
 use ActiveGenerator\Laravel\Libs\TopSort\ArraySort;
 use Illuminate\Support\Str;
 use Symfony\Component\Yaml\Yaml;
@@ -15,6 +16,9 @@ class YamlSchema extends YamlBaseClass {
     {
         parent::__construct();
         $this->data = Yaml::parse($string);
+
+        $this->parseMixins();
+
         $this->models = new YamlCollection();
 
         // Support for the --include parameter
@@ -32,17 +36,59 @@ class YamlSchema extends YamlBaseClass {
         $this->topologicalSort();
     }
 
+    private function parseMixins() {
+        if (!$this->data) return;
+        if (!isset($this->data['mixins'])) return;
+
+        $availableMixins = $this->data['mixins'];
+
+        foreach($this->data as $name => $model) {
+            if ($this->isReserved($name)) continue;
+            if (!isset($model['mixins'])) continue;
+
+            foreach($model['mixins'] as $mixinRequest) {
+
+                if (is_string($mixinRequest)) {
+                    $mixinRequest = ['is' => $mixinRequest];
+                }
+
+                if (!$mixinRequest['is']) continue;
+
+                $parsedMixin = $this->parseMixin($availableMixins[$mixinRequest['is']], $mixinRequest);
+
+                $this->data[$name] = array_replace_recursive($model, $parsedMixin);
+            }
+        }
+    }
+
+    private function parseMixin($mixin, $mixinRequest) {
+        return $this->mapRecursive(fn($x) => is_string($x) ? Template::compile($x, $mixinRequest) : $x, $mixin);
+    }
+
+    private function mapRecursive($callback, $array)
+    {
+        $func = function ($item) use (&$func, &$callback) {
+            return is_array($item) ? array_map($func, $item) : call_user_func($callback, $item);
+        };
+
+        return array_map($func, $array);
+    }
+
+    private function isReserved($value) {
+        return in_array($value, ['config', 'mixins']);
+    }
+
     private function createModels() {
         if ($this->data) {
             // Dumb double processing to make relations work @todo enhance
             $finalModels = new YamlCollection();;
             foreach($this->data as $name => $model) {
-                if ($name === "config") continue;
+                if ($this->isReserved($name)) continue;
                 $this->models = $this->models->add(new YamlModel($model, $name, $this));
             }
 
             foreach($this->data as $name => $model) {
-                if ($name === "config") continue;
+                if ($this->isReserved($name)) continue;
                 $finalModels = $finalModels->add(new YamlModel($model, $name, $this));
             }
             $this->models = $finalModels;
@@ -87,7 +133,8 @@ class YamlSchema extends YamlBaseClass {
 
                         $data = ['fields' => [], 'config' => [
                             'table' => $relation->args->table,
-                            'include' => ['MigrationGenerator']
+                            'include' => ['MigrationGenerator'],
+                            'exclude' => []
                         ]];
 
                         if ($model->get('config.include')) {

@@ -137,7 +137,7 @@ class YamlField extends YamlBaseClass {
     }
 
     private function setRules() {
-        $this->rules = $this->get('rules', '');
+        $this->rules = $this->get('rules', $this->nullable ? '' : 'required');
     }
 
     private function setMigration() {
