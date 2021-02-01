@@ -5,8 +5,6 @@ namespace ActiveGenerator\Laravel\Models\Yaml;
 use Illuminate\Support\Str;
 
 class YamlRelationArgs extends YamlBaseClass {
-    public YamlRelation $parentYaml;
-
     # hasOne # hasMany
     public $related;
     public $foreignKey;
@@ -34,16 +32,15 @@ class YamlRelationArgs extends YamlBaseClass {
     public $type;
     public $id;
 
-    public function __construct(&$parentYaml)
+    public function __construct(&$parent)
     {
-        parent::__construct();
+        parent::__construct($parent);
 
-        $this->parentYaml = $parentYaml;
         $this->setArgs();
     }
 
     public function getParent($key, $default = null) {
-        return $this->parentYaml->get($key, $default);
+        return $this->parent->get($key, $default);
     }
 
     public function prepare($item) {
@@ -51,7 +48,7 @@ class YamlRelationArgs extends YamlBaseClass {
     }
 
     public function setArgs() {
-        $this->related = $this->parentYaml->relatedOriginal . '::class';
+        $this->related = $this->parent->relatedOriginal . '::class';
 
         $this->foreignKey = $this->getParent('foreignKey', $this->guessForeignKey());
         $this->localKey = $this->getParent('localKey');
@@ -79,14 +76,14 @@ class YamlRelationArgs extends YamlBaseClass {
     }
 
     public function list() {
-        if ($this->parentYaml->is === "hasOne" || $this->parentYaml->is === "hasMany") {
+        if ($this->parent->is === "hasOne" || $this->parent->is === "hasMany") {
             return [
                 $this->related,
                 $this->prepare($this->foreignKey),
                 $this->prepare($this->localKey),
             ];
         }
-        if ($this->parentYaml->is === "belongsTo") {
+        if ($this->parent->is === "belongsTo") {
             return [
                 $this->related,
                 $this->prepare($this->foreignKey),
@@ -94,7 +91,7 @@ class YamlRelationArgs extends YamlBaseClass {
                 $this->prepare($this->relation),
             ];
         }
-        if ($this->parentYaml->is === "belongsToMany") {
+        if ($this->parent->is === "belongsToMany") {
             return [
                 $this->related,
                 $this->prepare($this->table),
@@ -105,7 +102,7 @@ class YamlRelationArgs extends YamlBaseClass {
                 $this->prepare($this->relation),
             ];
         }
-        if ($this->parentYaml->is === "morphOne" || $this->parentYaml->is === "morphMany") {
+        if ($this->parent->is === "morphOne" || $this->parent->is === "morphMany") {
             return [
                 $this->related,
                 $this->prepare($this->name),
@@ -114,7 +111,7 @@ class YamlRelationArgs extends YamlBaseClass {
                 $this->prepare($this->localKey),
             ];
         }
-        if ($this->parentYaml->is === "morphedByMany" || $this->parentYaml->is === "morphToMany") {
+        if ($this->parent->is === "morphedByMany" || $this->parent->is === "morphToMany") {
             return [
                 $this->related,
                 $this->prepare($this->name),
@@ -125,7 +122,7 @@ class YamlRelationArgs extends YamlBaseClass {
                 $this->prepare($this->relatedKey),
             ];
         }
-        if ($this->parentYaml->is === "morphTo") {
+        if ($this->parent->is === "morphTo") {
             return [
                 $this->prepare($this->name),
                 $this->prepare($this->type),
@@ -133,7 +130,7 @@ class YamlRelationArgs extends YamlBaseClass {
                 $this->prepare($this->ownerKey),
             ];
         }
-        if ($this->parentYaml->is === "hasOneThrough" || $this->parentYaml->is === "hasManyThrough" ) {
+        if ($this->parent->is === "hasOneThrough" || $this->parent->is === "hasManyThrough" ) {
             return [
                 $this->related,
                 $this->prepare($this->through),
@@ -159,11 +156,11 @@ class YamlRelationArgs extends YamlBaseClass {
     }
 
     public function guessTable() {
-        if ($this->parentYaml->is == "belongsToMany") {
+        if ($this->parent->is == "belongsToMany") {
 
             $models = new YamlCollection([
-                $this->parentYaml->parentYaml->getName('singular snake'),
-                Str::to($this->parentYaml->related, "singular snake")
+                $this->parent->parent->getName('singular snake'),
+                Str::to($this->parent->related, "singular snake")
             ]);
 
             $models = $models->sort("asc");
@@ -171,41 +168,41 @@ class YamlRelationArgs extends YamlBaseClass {
             // var_dump("g", $models->first() . "_" . $models->last());
             return $models->first() . "_" . $models->last();
         }
-        if ($this->parentYaml->is == "morphToMany") {
+        if ($this->parent->is == "morphToMany") {
             return Str::to($this->name, "plural");
         }
         return null;
     }
 
     public function guessForeignKey() {
-        if ($this->parentYaml->is == "belongsTo") {
-            return $this->parentYaml->str('related', 'snake') . "_id";
+        if ($this->parent->is == "belongsTo") {
+            return $this->parent->str('related', 'snake') . "_id";
         }
         return null;
     }
 
     public function guessForeignPivotKey() {
-        if ($this->parentYaml->is == "belongsToMany") {
-            return $this->parentYaml->parentYaml->getName("snake") . "_id";
+        if ($this->parent->is == "belongsToMany") {
+            return $this->parent->parent->getName("snake") . "_id";
         }
-        if ($this->parentYaml->is == "morphToMany") {
+        if ($this->parent->is == "morphToMany") {
             return $this->name . "_id";
         }
         return null;
     }
 
     public function guessRelatedPivotKey() {
-        if ($this->parentYaml->is == "belongsToMany") {
-            return Str::to($this->parentYaml->related, "snake") . "_id";
+        if ($this->parent->is == "belongsToMany") {
+            return Str::to($this->parent->related, "snake") . "_id";
         }
-        if ($this->parentYaml->is == "morphToMany") {
-            return Str::to($this->parentYaml->related, "snake") . "_id";
+        if ($this->parent->is == "morphToMany") {
+            return Str::to($this->parent->related, "snake") . "_id";
         }
         return null;
     }
 
     public function guessType() {
-        if ($this->parentYaml->is == "morphToMany") {
+        if ($this->parent->is == "morphToMany") {
             return $this->name . "_type";
         }
         return null;

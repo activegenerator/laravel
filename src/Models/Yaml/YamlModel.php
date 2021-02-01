@@ -11,17 +11,15 @@ class YamlModel extends YamlBaseClass
     public YamlCollection $fields;
     public YamlCollection $relations;
     public $data = [];
-    public YamlSchema $parentYaml;
 
     public $table;
     // ModelName
     public $name;
     public $nameFull;
 
-    public function __construct($yamlData, $yamlModelName, YamlSchema &$parentYaml)
+    public function __construct($yamlData, $yamlModelName, YamlSchema &$parent)
     {
-        parent::__construct();
-        $this->parentYaml = &$parentYaml;
+        parent::__construct($parent);
         $this->data = $yamlData;
 
         $this->setName($yamlModelName);
@@ -102,7 +100,7 @@ class YamlModel extends YamlBaseClass
     {
         if (str_contains($query, "config.")) {
             // Also check parent
-            return Arr::get($this->data, $query, $this->parentYaml->get($query, $default));
+            return Arr::get($this->data, $query, $this->parent->get($query, $default));
         }
 
         return parent::get($query, $default);

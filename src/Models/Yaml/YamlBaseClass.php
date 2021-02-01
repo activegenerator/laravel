@@ -10,8 +10,12 @@ use Illuminate\Support\Str;
  *
  */
 class YamlBaseClass extends BaseClass {
-  public function __construct()
+
+  protected $parent;
+
+  public function __construct(YamlBaseClass &$parent = null)
   {
+    $this->parent = $parent ? $parent : $this;
     parent::__construct();
   }
 

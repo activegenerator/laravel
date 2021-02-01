@@ -7,7 +7,7 @@ use ActiveGenerator\Laravel\Helpers\FakerHelper;
 use Exception;
 use Illuminate\Support\Str;
 
-class YamlFieldType extends BaseClass {
+class YamlFieldType extends YamlBaseClass {
     public ?string $database = null;
     public ?string $php = null;
     public ?string $swagger = null;
@@ -17,12 +17,9 @@ class YamlFieldType extends BaseClass {
     public array $props = [];
     public string $propsOriginal = "";
 
-    private YamlField $parent;
-
-    public function __construct($type, &$field)
+    public function __construct($type, &$parent)
     {
-        parent::__construct();
-        $this->parent = &$field;
+        parent::__construct($parent);
         $segs = explode(":", $type);
         $this->database =  $segs[0] ?? null;
         $this->props = explode(",", $segs[1] ?? "");

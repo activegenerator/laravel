@@ -28,13 +28,11 @@ class YamlField extends YamlBaseClass {
     public $filterable;
     public $sortable;
 
-    public YamlModel $parent;
     public $label;
 
     public function __construct($data, $slug, &$parent)
     {
-        parent::__construct();
-        $this->parent = &$parent;
+        parent::__construct($parent);
         $this->slug = $slug;
         $this->data = $data;
 

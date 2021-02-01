@@ -7,9 +7,10 @@ use ActiveGenerator\Laravel\Libs\TopSort\ArraySort;
 use Exception;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use JsonSerializable;
 use Symfony\Component\Yaml\Yaml;
 
-class YamlSchema extends YamlBaseClass {
+class YamlSchema extends YamlBaseClass implements JsonSerializable {
 
     public $data;
     public YamlCollection $models;
@@ -39,6 +40,10 @@ class YamlSchema extends YamlBaseClass {
         $this->createAutomaticRelations();
         $this->createAutomaticFields();
         $this->topologicalSort();
+    }
+
+    public function jsonSerialize() {
+        return $this->models;
     }
 
     private function parseIncludes($string) {
@@ -145,7 +150,7 @@ class YamlSchema extends YamlBaseClass {
 
                     // Auto-create opposite relation when needed
                     if ($default) {
-                        $model2 = $this->models->first(fn($x) => $x->name == $default->parentYaml->name);
+                        $model2 = $this->models->first(fn($x) => $x->name == $default->parent->name);
 
                         if (!$model2->relations->any(fn($x) => $x->related === $default->related)) {
                             $model2->relations = $model2->relations->add($default);

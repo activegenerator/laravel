@@ -16,7 +16,7 @@ class YamlRelation extends YamlBaseClass {
     public $related; // The other model
     public $relatedFull; // The other model including namespace
     public $relatedOriginal; // // The other model as given
-    public ?YamlModel $relatedYaml; // The other model in yaml if existing
+    protected ?YamlModel $relatedYaml; // The other model in yaml if existing
     public $relatedTitleField;
 
     public $listable;
@@ -32,16 +32,12 @@ class YamlRelation extends YamlBaseClass {
     // public $foreignPivotKey;
     // public $relatedPivotKey;
 
-    public YamlModel $parentYaml; // the own yaml model
-
-    public function __construct($data, &$parentYaml)
+    public function __construct($data, &$parent)
     {
-        parent::__construct();
-
-        $this->parentYaml = &$parentYaml;
+        parent::__construct($parent);
 
         if ( empty($data['is']) )  {
-            throw new Exception("Please specify an 'is' property on this relation in '" . $this->parentYaml->name . ".relations'");
+            throw new Exception("Please specify an 'is' property on this relation in '" . $this->parent->name . ".relations'");
         }
 
         $this->is = $data['is'];
@@ -50,12 +46,12 @@ class YamlRelation extends YamlBaseClass {
 
         if ( ($this->is === "hasOneThrough" || $this->is === "hasManyThrough") &&
             !$this->get('through')) {
-            throw new Exception("Please define a 'through' property on the " . $this->is . "-relation in '" . $this->parentYaml->name . ".relations");
+            throw new Exception("Please define a 'through' property on the " . $this->is . "-relation in '" . $this->parent->name . ".relations");
         }
 
         if ( ($this->is === "morphOne" || $this->is === "morphMany" || $this->is === "morphedByMany" || $this->is == "morphToMany") &&
             !$this->get('name')) {
-            throw new Exception("Please define a 'name' property on the " . $this->is . "-relation in '" . $this->parentYaml->name . ".relations");
+            throw new Exception("Please define a 'name' property on the " . $this->is . "-relation in '" . $this->parent->name . ".relations");
         }
 
         $this->setRelated();
@@ -84,9 +80,9 @@ class YamlRelation extends YamlBaseClass {
     /**
      * One field can bind to multiple relations
      */
-    public static function bind($data, $parentYaml): YamlCollection
+    public static function bind($data, $parent): YamlCollection
     {
-        return new YamlCollection([new YamlRelation($data, $parentYaml)]);
+        return new YamlCollection([new YamlRelation($data, $parent)]);
     }
 
     public function relatedFields() : array {
@@ -95,7 +91,7 @@ class YamlRelation extends YamlBaseClass {
 
     public function relatedRelation() : ?YamlRelation {
         if (!$this->relatedYaml) return null;
-        // $defaultProp = $this->parentYaml->getName('camel ' . ($this->isSingular() ? 'singular' : 'plural'));
+        // $defaultProp = $this->parent->getName('camel ' . ($this->isSingular() ? 'singular' : 'plural'));
 
         if ($this->is == "belongsTo") {
             $field = $this->get('autocreatedBy', null);
@@ -107,30 +103,30 @@ class YamlRelation extends YamlBaseClass {
 
             return new YamlRelation(array_merge([
                 'is' => 'hasMany',
-                'related' => $this->parentYaml->getName('Entity'),
+                'related' => $this->parent->getName('Entity'),
                 'rules' => $this->rules,
                 'foreignKey' => $this->args->foreignKey,
                 'localKey' => $this->args->ownerKey,
                 'autocreatedBy' => $this,
-                'prop' => $this->parentYaml->str('name', 'camel plural'),
+                'prop' => $this->parent->str('name', 'camel plural'),
             ], $this->getCrudables()), $this->relatedYaml);
         }
 
         if ($this->is == "hasMany" || $this->is == "hasOne") {
             return new YamlRelation(array_merge([
                 'is' => 'belongsTo',
-                'related' => $this->parentYaml->getName('Entity'),
+                'related' => $this->parent->getName('Entity'),
                 'rules' => $this->rules,
                 'foreignKey' => $this->args->foreignKey,
                 'ownerKey' => $this->args->localKey,
-                'prop' => $this->parentYaml->str('name', 'camel singular'),
+                'prop' => $this->parent->str('name', 'camel singular'),
             ], $this->getCrudables()), $this->relatedYaml);
         }
 
         if ($this->is == "belongsToMany") {
             return new YamlRelation(array_merge([
                 'is' => 'belongsToMany',
-                'related' => $this->parentYaml->getName('Entity'),
+                'related' => $this->parent->getName('Entity'),
                 'rules' => $this->rules,
                 'table' => $this->args->table,
                 'foreignPivotKey' => $this->args->relatedPivotKey,
@@ -138,14 +134,14 @@ class YamlRelation extends YamlBaseClass {
                 'parentKey' => $this->args->relatedKey,
                 'relatedKey' => $this->args->parentKey,
                 'autocreatedBy' => $this,
-                'prop' => $this->parentYaml->str('name', 'camel plural'),
+                'prop' => $this->parent->str('name', 'camel plural'),
             ], $this->getCrudables()), $this->relatedYaml);
         }
 
         if ($this->is == "morphToMany") {
             return new YamlRelation(array_merge([
                 'is' => 'morphedByMany',
-                'related' => $this->parentYaml->getName('Entity'),
+                'related' => $this->parent->getName('Entity'),
                 'rules' => $this->rules,
                 'name' => $this->args->name,
                 'table' => $this->args->table,
@@ -154,14 +150,14 @@ class YamlRelation extends YamlBaseClass {
                 'parentKey' => $this->args->relatedKey,
                 'relatedKey' => $this->args->parentKey,
                 'autocreatedBy' => $this,
-                'prop' => $this->parentYaml->str('name', 'camel plural'),
+                'prop' => $this->parent->str('name', 'camel plural'),
             ], $this->getCrudables()), $this->relatedYaml);
         }
 
         if ($this->is == "morphedByMany") {
             return new YamlRelation(array_merge([
                 'is' => 'morphToMany',
-                'related' => $this->parentYaml->getName('Entity'),
+                'related' => $this->parent->getName('Entity'),
                 'rules' => $this->rules,
                 'name' => $this->args->name,
                 'table' => $this->args->table,
@@ -170,7 +166,7 @@ class YamlRelation extends YamlBaseClass {
                 'parentKey' => $this->args->relatedKey,
                 'relatedKey' => $this->args->parentKey,
                 'autocreatedBy' => $this,
-                'prop' => $this->parentYaml->str('name', 'camel plural'),
+                'prop' => $this->parent->str('name', 'camel plural'),
             ], $this->getCrudables()), $this->relatedYaml);
         }
 
@@ -182,7 +178,7 @@ class YamlRelation extends YamlBaseClass {
                 'id' => $this->args->id,
                 'ownerKey' => $this->args->localKey,
                 'prop' => $this->args->name,
-                'prop' => $this->parentYaml->str('name', 'camel ' . ($this->is == "morphOne" ? 'singular' : 'plural')),
+                'prop' => $this->parent->str('name', 'camel ' . ($this->is == "morphOne" ? 'singular' : 'plural')),
             ], $this->getCrudables()), $this->relatedYaml);
         }
 
@@ -193,7 +189,7 @@ class YamlRelation extends YamlBaseClass {
         $this->relatedOriginal = $related = $this->get('related');
 
         if (!$related && $this->is !== "morphTo") {
-            throw new Exception("Please define a 'related' property on the " . $this->is . "-relation in '" . $this->parentYaml->name . ".relations");
+            throw new Exception("Please define a 'related' property on the " . $this->is . "-relation in '" . $this->parent->name . ".relations");
         }
 
         if (Str::contains($related, '\\')) {
@@ -204,7 +200,7 @@ class YamlRelation extends YamlBaseClass {
             $this->relatedFull = '\App\Models\\' . $related;
         }
 
-        $this->relatedYaml = $this->parentYaml->parentYaml->models->first(fn($x) => $x->name == $this->related);
+        $this->relatedYaml = $this->parent->parent->models->first(fn($x) => $x->name == $this->related);
     }
 
     private function setProp() {
@@ -227,7 +223,7 @@ class YamlRelation extends YamlBaseClass {
         if ($this->relatedYaml)
             $this->relatedTitleField = $this->relatedYaml->get('config.titleField', 'id');
         else
-            $this->relatedTitleField = $this->get('relatedTitleField', $this->parentYaml->parentYaml->get('config.deaultRelatedTitleField', 'id'));
+            $this->relatedTitleField = $this->get('relatedTitleField', $this->parent->parent->get('config.deaultRelatedTitleField', 'id'));
     }
 
     public function getCrudables() {
