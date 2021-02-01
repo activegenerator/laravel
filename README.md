@@ -1,14 +1,34 @@
-# ActiveGenerator
+<!-- vscode-markdown-toc -->
+* 1. [Installation](#Installation)
+* 2. [Configuration](#Configuration)
+* 3. [Writing the yml](#Writingtheyml)
+* 4. [Structure of the yaml file (overview)](#Structureoftheyamlfileoverview)
+* 5. [Config object & defaults](#Configobjectdefaults)
+* 6. [Fields](#Fields)
+* 7. [Relations](#Relations)
+* 8. [Code](#Code)
+* 9. [Mixins](#Mixins)
+* 10. [Includes](#Includes)
+* 11. [Changing the templates](#Changingthetemplates)
+* 12. [Generate!](#Generate)
+
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc --># ActiveGenerator
 The code generator for Laravel. Build your Laravel project from a single yml schema file
 
-## Installation
+
+
+##  1. <a name='Installation'></a>Installation
 In your laravel directory run:
 
 ```
 composer require activegenerator/laravel --dev
 ```
 
-## Configuration
+##  2. <a name='Configuration'></a>Configuration
 
 ```
 php artisan activegenerator:publish config
@@ -28,7 +48,7 @@ The config file is now accessabile in ```config/activegenerator.php```. Besides 
 ...
 ```
 
-## Writing the yml
+##  3. <a name='Writingtheyml'></a>Writing the yml
 
 Go ahead and publish the ```example.yml``` file to the ```generator/schemas``` directory:
 ```
@@ -59,7 +79,7 @@ File:
       label: Path
 ```
 
-## Structure of the yaml file (overview)
+##  4. <a name='Structureoftheyamlfileoverview'></a>Structure of the yaml file (overview)
 
 ```yml
 config: # Object - Config on root
@@ -73,7 +93,7 @@ ModelName: # Object - The singular model name
    code: # Object - Insert custom code
 ```
 
-## Config object & defaults
+##  5. <a name='Configobjectdefaults'></a>Config object & defaults
 
 The defaults of the config object:
 
@@ -106,7 +126,7 @@ ModelName:
 The config object can be set on the root (affecting all models in the file) or on a individual model
 
 
-## Fields
+##  6. <a name='Fields'></a>Fields
 
 ```yml
 City:
@@ -130,7 +150,7 @@ City:
             sortable: true # Whether this field can be sorted. default: true
 ```
 
-## Relations
+##  7. <a name='Relations'></a>Relations
 
 Below a specfication of all the relations with there properties. Most properties are automatically inferred. The reverse relations is automatically created.
 
@@ -226,7 +246,7 @@ City:
       relatedTitleField: name # Default is the config.titleField on the other model or else 'id'
 ```
 
-## Code
+##  8. <a name='Code'></a>Code
 
 You can add custom code inside the model if needed. There are a few slots provided in the model.
 
@@ -262,7 +282,7 @@ City:
       body:
 ```
 
-## Mixins
+##  9. <a name='Mixins'></a>Mixins
 
 Some times you want to add the same fields to different model. Or you want to always include some Trait or other code. 
 Mixins come in handy:
@@ -285,15 +305,22 @@ mixins: # The global mixin specification
           {
               return ['slug' => ['source' => '{{ $slug ?? 'name' }}']];
           }
+  user: # Name of the mixin
+    fields:
+      user_id:
+        is: foreignId
+        references: id
+        on: users
 
 ModelName:
   mixins: # On the model we can specify the mixin to be used
     - is: slug
       slug: name # The object properties are passed onto the mixin. In this case $slug is available in the mixin strings.
+    - user # Just pass a string if blade-props are not needed
 
 ```
 
-## Includes
+##  10. <a name='Includes'></a>Includes
 
 You can include other yml files in a file with ``#!include FILE_NAME`` for example:
 
@@ -307,7 +334,7 @@ ModelName:
     # etc.
 ```
 
-## Changing the templates
+##  11. <a name='Changingthetemplates'></a>Changing the templates
 
 ```
 php artisan activegenerator:publish templates
@@ -316,7 +343,7 @@ php artisan activegenerator:publish templates
 The templates will be available in the generator/templates directory
 
 
-## Generate!
+##  12. <a name='Generate'></a>Generate!
 
 ```
 php artisan activegenerator:build example.yml
