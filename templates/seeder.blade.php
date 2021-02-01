@@ -1,8 +1,8 @@
 namespace Database\Seeders;
-use App\Models\{{ $yaml->getName('Entity') }};
+use App\Models\{{ $model->getName('Entity') }};
 use Illuminate\Database\Seeder;
 
-class {{ $yaml->getName('Entity') }}Seeder extends Seeder
+class {{ $model->getName('Entity') }}Seeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -11,6 +11,6 @@ class {{ $yaml->getName('Entity') }}Seeder extends Seeder
      */
     public function run()
     {
-        {{ $yaml->getName('Entity') }}::factory()->create();
+        {{ $model->getName('Entity') }}::factory()->create();
     }
 }

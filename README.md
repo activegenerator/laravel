@@ -1,34 +1,18 @@
-<!-- vscode-markdown-toc -->
-* 1. [Installation](#Installation)
-* 2. [Configuration](#Configuration)
-* 3. [Writing the yml](#Writingtheyml)
-* 4. [Structure of the yaml file (overview)](#Structureoftheyamlfileoverview)
-* 5. [Config object & defaults](#Configobjectdefaults)
-* 6. [Fields](#Fields)
-* 7. [Relations](#Relations)
-* 8. [Code](#Code)
-* 9. [Mixins](#Mixins)
-* 10. [Includes](#Includes)
-* 11. [Changing the templates](#Changingthetemplates)
-* 12. [Generate!](#Generate)
-
-<!-- vscode-markdown-toc-config
-	numbering=true
-	autoSave=true
-	/vscode-markdown-toc-config -->
-<!-- /vscode-markdown-toc --># ActiveGenerator
+# ActiveGenerator
 The code generator for Laravel. Build your Laravel project from a single yml schema file
 
+## Plugins
+https://github.com/activegenerator/jetstream - Generators for Jetstream. Includes an out of the box admin panel based on livewire.
+https://github.com/activegenerator/nova - Generators for Laravel Nova.
 
-
-##  1. <a name='Installation'></a>Installation
+## Installation
 In your laravel directory run:
 
 ```
 composer require activegenerator/laravel --dev
 ```
 
-##  2. <a name='Configuration'></a>Configuration
+## Configuration
 
 ```
 php artisan activegenerator:publish config
@@ -48,7 +32,7 @@ The config file is now accessabile in ```config/activegenerator.php```. Besides 
 ...
 ```
 
-##  3. <a name='Writingtheyml'></a>Writing the yml
+## Writing the yml
 
 Go ahead and publish the ```example.yml``` file to the ```generator/schemas``` directory:
 ```
@@ -79,7 +63,7 @@ File:
       label: Path
 ```
 
-##  4. <a name='Structureoftheyamlfileoverview'></a>Structure of the yaml file (overview)
+## Structure of the yaml file (overview)
 
 ```yml
 config: # Object - Config on root
@@ -93,7 +77,7 @@ ModelName: # Object - The singular model name
    code: # Object - Insert custom code
 ```
 
-##  5. <a name='Configobjectdefaults'></a>Config object & defaults
+## Config object & defaults
 
 The defaults of the config object:
 
@@ -126,7 +110,7 @@ ModelName:
 The config object can be set on the root (affecting all models in the file) or on a individual model
 
 
-##  6. <a name='Fields'></a>Fields
+## Fields
 
 ```yml
 City:
@@ -150,7 +134,7 @@ City:
             sortable: true # Whether this field can be sorted. default: true
 ```
 
-##  7. <a name='Relations'></a>Relations
+## Relations
 
 Below a specfication of all the relations with there properties. Most properties are automatically inferred. The reverse relations is automatically created.
 
@@ -246,7 +230,7 @@ City:
       relatedTitleField: name # Default is the config.titleField on the other model or else 'id'
 ```
 
-##  8. <a name='Code'></a>Code
+## Code
 
 You can add custom code inside the model if needed. There are a few slots provided in the model.
 
@@ -282,7 +266,7 @@ City:
       body:
 ```
 
-##  9. <a name='Mixins'></a>Mixins
+## Mixins
 
 Some times you want to add the same fields to different model. Or you want to always include some Trait or other code. 
 Mixins come in handy:
@@ -320,7 +304,7 @@ ModelName:
 
 ```
 
-##  10. <a name='Includes'></a>Includes
+## Includes
 
 You can include other yml files in a file with ``#!include FILE_NAME`` for example:
 
@@ -334,7 +318,7 @@ ModelName:
     # etc.
 ```
 
-##  11. <a name='Changingthetemplates'></a>Changing the templates
+## Changing the templates
 
 ```
 php artisan activegenerator:publish templates
@@ -342,8 +326,31 @@ php artisan activegenerator:publish templates
 
 The templates will be available in the generator/templates directory
 
+You can access the yaml-model in templates via ``$model``. 
 
-##  12. <a name='Generate'></a>Generate!
+## Writing a plugin
+
+The yaml file is parsed and passed onto the generators specified in the activegenerator.php config.
+Checkout for example ``ModelGenerator.php`` in the project. The class must extend and implement ``Generator``.
+
+* Specify a ``public function templatesDir()`` that returns the templates directory as string
+* Specify a ``public function output()`` that returns an array with the files that should be created. See the ModelGenerator for an example
+* Optionally write an ``public function extend()`` to extend the vars that are available to the template. The vars are specified on the $this->vars array
+* Optionally override the ``public function write(string $filename, string $contents)`` on the generator if you not only want replace whole files. But for example inject code into existing files. Use ```$this->insertAfter($filename, $contents, $regex, $mode = 'first')``` and ```$this->insertAfter($filename, $contents, $regex, $mode = 'first')``` for this. Checkout the example in ```JetstreamGenerator.php```
+
+You can access the yaml-model in templates via ``$model``. 
+
+### Marker
+
+The marker is used to mark generated code in exisitng files. For example the web.php routes file contains these marks.
+
+```{{ $marker->start() }}``` in the template will result in: ```// @gen:start ModelName filename-of-template.blade.php - do not remove```
+```{{ $marker->end() }}``` in the template will result in: ```// @gen:end ModelName filename-of-template.blade.php - do not remove```
+
+
+
+
+## Generate!
 
 ```
 php artisan activegenerator:build example.yml

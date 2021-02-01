@@ -1,17 +1,17 @@
 namespace Database\Factories;
-use App\Models\{{ $yaml->getName('Entity') }};
+use App\Models\{{ $model->getName('Entity') }};
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Arr;
-{!! $yaml->getCode('factory.imports', 0) !!}
+{!! $model->getCode('factory.imports', 0) !!}
 
-class {{ $yaml->getName('Entity') }}Factory extends Factory
+class {{ $model->getName('Entity') }}Factory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
      * @var string
      */
-    protected $model = {{ $yaml->getName('Entity') }}::class;
+    protected $model = {{ $model->getName('Entity') }}::class;
 
     /**
      * Define the model's default state.
@@ -21,7 +21,7 @@ class {{ $yaml->getName('Entity') }}Factory extends Factory
     public function definition()
     {
         return [
-@foreach($yaml->fields as $field)
+@foreach($model->fields as $field)
     @if($field->slug == "created_at" || $field->slug == "updated_at")@continue @endif
     @if($field->type->database != "id" && $field->type->database != "foreignId" && $field->slug != "deleted_at")
         @if($field->type->fakerMethod)
@@ -34,7 +34,7 @@ class {{ $yaml->getName('Entity') }}Factory extends Factory
           '{{ $field->slug }}' => {{ $field->type->relatedRelation()->relatedFull }}::factory(),
     @endif
 @endforeach
-{!! $yaml->getCode('factory.definition', 10) !!}
+{!! $model->getCode('factory.definition', 10) !!}
         ];
     }
 }

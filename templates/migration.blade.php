@@ -2,9 +2,9 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-{!! $yaml->getCode('migration.imports', 0) !!}
+{!! $model->getCode('migration.imports', 0) !!}
 
-class Create{{ $yaml->str('table', 'studly') }}Table extends Migration
+class Create{{ $model->str('table', 'studly') }}Table extends Migration
 {
     /**
      * Run the migrations.
@@ -13,15 +13,15 @@ class Create{{ $yaml->str('table', 'studly') }}Table extends Migration
      */
     public function up()
     {
-        Schema::create('{{ $yaml->table }}', function (Blueprint $table) {
-@foreach($yaml->fields as $fields)
+        Schema::create('{{ $model->table }}', function (Blueprint $table) {
+@foreach($model->fields as $fields)
     @if($fields->migration )
             {!! $fields->migration !!}
     @endif
 @endforeach
-{!! $yaml->getCode('migration.schema_up', 12) !!}
+{!! $model->getCode('migration.schema_up', 12) !!}
         });
-{!! $yaml->getCode('migration.up', 8) !!}
+{!! $model->getCode('migration.up', 8) !!}
     }
 
     /**
@@ -31,8 +31,8 @@ class Create{{ $yaml->str('table', 'studly') }}Table extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('{{ $yaml->table }}');
-{!! $yaml->getCode('migration.up', 8) !!}
+        Schema::dropIfExists('{{ $model->table }}');
+{!! $model->getCode('migration.up', 8) !!}
     }
 }
 {{-- // @@schema:{!! $json !!} --}}

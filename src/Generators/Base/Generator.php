@@ -46,7 +46,9 @@ abstract class Generator extends BaseClass {
     parent::__construct();
 
     $this->yaml = $model;
+    $this->model = $model;
     $this->vars['yaml'] = $model;
+    $this->vars['model'] = $model;
     $this->vars['marker'] = new Marker($model->name);
     $this->vars['appNamespace'] = substr($context['namespace'] ?? '', 0, -1);
     $this->vars['outputDir'] = $context['outputDir'] ?? '';
