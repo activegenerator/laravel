@@ -2,6 +2,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+{!! $yaml->getCode('migration.imports', 0) !!}
 
 class Create{{ $yaml->str('table', 'studly') }}Table extends Migration
 {
@@ -18,7 +19,9 @@ class Create{{ $yaml->str('table', 'studly') }}Table extends Migration
             {!! $fields->migration !!}
     @endif
 @endforeach
+{!! $yaml->getCode('migration.schema_up', 12) !!}
         });
+{!! $yaml->getCode('migration.up', 8) !!}
     }
 
     /**
@@ -29,6 +32,7 @@ class Create{{ $yaml->str('table', 'studly') }}Table extends Migration
     public function down()
     {
         Schema::dropIfExists('{{ $yaml->table }}');
+{!! $yaml->getCode('migration.up', 8) !!}
     }
 }
 {{-- // @@schema:{!! $json !!} --}}

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 @foreach($usedTypes as $usedType)
 use {{ $usedType }};
 @endforeach
-{!! $yaml->get('code.model.imports') !!}
+{!! $yaml->getCode('model.imports') !!}
 
 /**
  * {{ $yaml->getName("Entity") }} Model
@@ -28,7 +28,7 @@ use {{ $usedType }};
  *
  * @@method static {{ $yaml->getName("Entity") }} create(array $attributes = [])
  */
-class {{ $yaml->getName("Entity") }} {!! $yaml->get('code.model.extends', 'extends Model') !!}
+class {{ $yaml->getName("Entity") }} {!! $yaml->getCode('model.extends', 0, 'extends Model') !!}
 {
 @if($yaml->get('config.hasFactory', true))
     use HasFactory;
@@ -36,7 +36,7 @@ class {{ $yaml->getName("Entity") }} {!! $yaml->get('code.model.extends', 'exten
 @if($yaml->get('config.softDeletes', false))
     use SoftDeletes;
 @endif
-{!! $yaml->get('code.model.header') !!}
+{!! $yaml->getCode('model.header', 4) !!}
     protected $table = '{{ $yaml->table }}';
 
     protected $fillable = [
@@ -86,5 +86,5 @@ class {{ $yaml->getName("Entity") }} {!! $yaml->get('code.model.extends', 'exten
     {!! '' !!}
 @endforeach
 
-{!! $yaml->get('code.model.body') !!}
+{!! $yaml->getCode('model.body', 4) !!}
 }

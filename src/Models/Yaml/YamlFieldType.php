@@ -152,13 +152,13 @@ class YamlFieldType extends BaseClass {
             "text" => ["phpType" => "string", "swaggerType" => "string", "example" => $this->wrap_quotes($faker->text()), "fakerMethod" => $bestProp ?? "paragraph"],
             "mediumText" => ["phpType" => "string", "swaggerType" => "string", "example" => $this->wrap_quotes($faker->text()), "fakerMethod" => $bestProp ?? "paragraph"],
             "longText" => ["phpType" => "string", "swaggerType" => "string", "example" => $this->wrap_quotes($faker->text()), "fakerMethod" => $bestProp ?? "text"],
-            "json" => ["phpType" => "string", "swaggerType" => "string", "example" => "{ example: 123 }", "fakerMethod" => null],
-            "jsonb" => ["phpType" => "string", "swaggerType" => "string", "example" => "{ example: 123 }", "fakerMethod" => null],
+            "json" => ["phpType" => "string", "swaggerType" => "string", "example" => "[]", "fakerMethod" => null],
+            "jsonb" => ["phpType" => "string", "swaggerType" => "string", "example" => "[]", "fakerMethod" => null],
 
 
             "bool" => ["phpType" => "bool", "swaggerType" => "boolean", "example" => "" . $faker->boolean(), "fakerMethod" => $bestProp ?? "boolean"],
             "boolean" => ["phpType" => "bool", "swaggerType" => "boolean", "example" => "" . $faker->boolean(), "fakerMethod" => $bestProp ?? "boolean"],
-            "enum" => ["phpType" => "string", "swaggerType" => "string", "example" => $exampleString, null],
+            "enum" => ["phpType" => "string", "swaggerType" => "string", "example" => $exampleString, "fakerMethod" => null],
             "set" => ["phpType" => "string", "swaggerType" => "string", "example" => $exampleString, "fakerMethod" => $bestProp ?? "word"],
 
             "timestamp" => ["phpType" => "\DateTime", "swaggerType" => "string", "example" => $this->wrap_quotes($faker->date), "fakerMethod" => $bestProp ?? "dateTimeThisDecade"],

@@ -9,8 +9,8 @@ class YamlField extends YamlBaseClass {
 
     public $data = [];
     public $slug = '';
-    public YamlFieldType $type;
-    public $typeProps = [];
+    public YamlFieldType $is;
+    public YamlFieldType $type; // Alias of is
 
     public $fillable;
     public $casts;
@@ -38,7 +38,8 @@ class YamlField extends YamlBaseClass {
         $this->slug = $slug;
         $this->data = $data;
 
-        $this->type = new YamlFieldType($this->get('type', null), $this);
+        $this->type = new YamlFieldType($this->get('is', $this->get('type', null)), $this);
+        $this->is = $this->type;
 
         $this->setNullable();
         $this->setDefault();

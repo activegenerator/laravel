@@ -61,6 +61,12 @@ class YamlModel extends YamlBaseClass
         $this->table = $this->get('config.table', $this->getName('table'));
     }
 
+    public function getCode($getter, $indentation = 0, $default = "") {
+        $code = $this->get('code.' . $getter, $default);
+
+        return join(PHP_EOL, array_map(fn($line) => str_pad("", $indentation) . $line, explode(PHP_EOL, $code)));
+    }
+
     private function setName($name) {
         $this->nameOriginal = $name;
 

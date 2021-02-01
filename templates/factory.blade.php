@@ -2,6 +2,7 @@ namespace Database\Factories;
 use App\Models\{{ $yaml->getName('Entity') }};
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Arr;
+{!! $yaml->getCode('factory.imports', 0) !!}
 
 class {{ $yaml->getName('Entity') }}Factory extends Factory
 {
@@ -21,6 +22,7 @@ class {{ $yaml->getName('Entity') }}Factory extends Factory
     {
         return [
 @foreach($yaml->fields as $field)
+    @if($field->slug == "created_at" || $field->slug == "updated_at")@continue @endif
     @if($field->type->database != "id" && $field->type->database != "foreignId" && $field->slug != "deleted_at")
         @if($field->type->fakerMethod)
           '{{ $field->slug }}' => $this->faker->{{ $field->type->fakerMethod }},
@@ -32,6 +34,7 @@ class {{ $yaml->getName('Entity') }}Factory extends Factory
           '{{ $field->slug }}' => {{ $field->type->relatedRelation()->relatedFull }}::factory(),
     @endif
 @endforeach
+{!! $yaml->getCode('factory.definition', 10) !!}
         ];
     }
 }

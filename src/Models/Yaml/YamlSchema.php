@@ -4,6 +4,8 @@ namespace ActiveGenerator\Laravel\Models\Yaml;
 
 use ActiveGenerator\Laravel\Helpers\Template;
 use ActiveGenerator\Laravel\Libs\TopSort\ArraySort;
+use Exception;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Symfony\Component\Yaml\Yaml;
 
@@ -15,6 +17,9 @@ class YamlSchema extends YamlBaseClass {
     public function __construct($string, $included = [])
     {
         parent::__construct();
+
+        $string = $this->parseIncludes($string);
+
         $this->data = Yaml::parse($string);
 
         $this->parseMixins();
@@ -36,11 +41,33 @@ class YamlSchema extends YamlBaseClass {
         $this->topologicalSort();
     }
 
+    private function parseIncludes($string) {
+        if (!$string) return $string;
+
+        preg_match_all('/#!include:?(.*)/', $string, $output_array);
+
+        foreach($output_array[0] as $key => $match) {
+            $file_raw = $output_array[1][$key];
+            $file = trim($file_raw);
+
+            $schemaDir = config("activegenerator.schemaDir") ?? __DIR__ . "/../../generator/schemas/";
+
+            try {
+                $contents = File::get($schemaDir . $file);
+            } catch(Exception $ex) {
+                throw new Exception("Could not find include " . $schemaDir . $file);
+            }
+
+            $string = str_replace($match, $contents, $string);
+        }
+
+        return $string;
+    }
+
     private function parseMixins() {
         if (!$this->data) return;
-        if (!isset($this->data['mixins'])) return;
 
-        $availableMixins = $this->data['mixins'];
+        $availableMixins = $this->data['mixins'] ?? [];
 
         foreach($this->data as $name => $model) {
             if ($this->isReserved($name)) continue;
@@ -54,9 +81,13 @@ class YamlSchema extends YamlBaseClass {
 
                 if (!$mixinRequest['is']) continue;
 
+                if (!isset($availableMixins[$mixinRequest['is']])) {
+                    throw new Exception("Could not find mixin: " . $mixinRequest['is']);
+                }
+
                 $parsedMixin = $this->parseMixin($availableMixins[$mixinRequest['is']], $mixinRequest);
 
-                $this->data[$name] = array_replace_recursive($model, $parsedMixin);
+                $this->data[$name] = array_replace_recursive($this->data[$name], $parsedMixin);
             }
         }
     }
