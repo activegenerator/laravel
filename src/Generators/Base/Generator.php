@@ -243,6 +243,14 @@ abstract class Generator extends BaseClass {
    * @return void
    */
   protected function put(string $filename, string $contents) {
+    if (File::exists($filename)) {
+        $fileString = File::get($filename);
+        if (str_contains($fileString, "@gen:lock")) {
+            $this->command->info("File is locked with @gen:lock, skipping..");
+            return;
+        }
+    }
+
     if (File::exists($filename) && !$this->command->option('force')) {
       $answer = "?";
       while($answer != "y" && $answer != "n") {

@@ -220,10 +220,14 @@ class YamlRelation extends YamlBaseClass {
     }
 
     private function setRelatedTitleField() {
+        if ($this->get('relatedTitleField')) {
+            $this->relatedTitleField = $this->get('relatedTitleField');
+            return;
+        }
         if ($this->relatedYaml)
             $this->relatedTitleField = $this->relatedYaml->get('config.titleField', 'id');
         else
-            $this->relatedTitleField = $this->get('relatedTitleField', $this->parent->parent->get('config.deaultRelatedTitleField', 'id'));
+            $this->relatedTitleField = $this->parent->parent->get('config.defaultRelatedTitleField', 'id');
     }
 
     public function getCrudables() {

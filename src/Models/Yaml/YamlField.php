@@ -118,7 +118,8 @@ class YamlField extends YamlBaseClass {
             'id', 'created_at', 'deleted_at', 'updated_at'
         ]);
         $excludedByType = in_array($this->type->php, [
-            'bool'
+            'bool',
+            'foreignId'
         ]);
 
         $this->searchable = $this->get('searchable', $excludedBySlug || $excludedByType ? false: true);
@@ -136,7 +137,7 @@ class YamlField extends YamlBaseClass {
     }
 
     private function setRules() {
-        $this->rules = $this->get('rules', $this->nullable ? '' : 'required');
+        $this->rules = $this->get('rules', $this->nullable || $this->type->database === "boolean" ? '' : 'required');
     }
 
     private function setMigration() {
