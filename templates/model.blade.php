@@ -16,13 +16,13 @@ use {{ $usedType }};
  * {{ $model->getName("Entity") }} Model
  *
 @foreach($model->fields as $field)
- * @@property {{ $field->type->php }} ${{ $field->slug }},
+ * @@property {{ $field->type->php }} ${{ $field->slug }}
 @endforeach
 @foreach($model->relations as $relation)
     @if($relation->isSingular())
- * @@property-read {{ $relation->related }} ${{ $relation->prop }},
+ * @@property-read {{ $relation->related }} ${{ $relation->prop }}
     @else
- * @@property-read {{ $relation->related }}[] ${{ $relation->prop }},
+ * @@property-read {{ $relation->related }}[] ${{ $relation->prop }}
     @endif
 @endforeach
  *
